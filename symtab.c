@@ -15,9 +15,10 @@ struct SymTableEntry* findSymbol(char *s) {
 
     return 0;
 }
-//add another child
+//add another child 
+//need to handled scope and  duplicate problem
 struct SymTableEntry* addVariable(char *s, enum StdType type) {
-    if(findSymbol(s) != 0) {
+    if(findSymbol(s) != 0) { 
         printf("Error: duplicate declaration of variable %s\n", s);
         exit(0);
     }
@@ -27,7 +28,7 @@ struct SymTableEntry* addVariable(char *s, enum StdType type) {
 
     strcpy(SymbolTable.entries[index].name, s);
     SymbolTable.entries[index].type = type;
-    
+    printf("Enter %s in symbol table\n" , s);
     return &SymbolTable.entries[index];
 }
 //find and return nth child in an node
@@ -41,17 +42,19 @@ struct node* nthChild(int n, struct node *node) {
 
 void semanticCheck(struct node *node) {
     switch(node->nodeType) {
-        case NODE_VAR_DECL: {
+        case NODE_DECL: { //first declarations and should perform scope check
             /* We only implement integer and real type here,
                you should implement array type by yourself */
-            struct node *typeNode = nthChild(2, node);
+            struct node *typeNode = nthChild(2, node);//node type
             enum StdType valueType;
             if(typeNode->nodeType == NODE_TYPE_INT)
                 valueType = TypeInt;
             else if(typeNode->nodeType == NODE_TYPE_REAL)
                 valueType = TypeReal;
-            else
+            else if(typeNode->nodeType == NODE_TYPE_STRING)
                 valueType = TypeString;
+            //array implementation
+
 
             struct node *idList = nthChild(1, node);
             struct node *idNode = idList->child;
@@ -79,6 +82,7 @@ void semanticCheck(struct node *node) {
             return;
         }
 
+        //NODE type 
         case NODE_INT: {
             node->valueType = TypeInt;
             return;
@@ -86,6 +90,11 @@ void semanticCheck(struct node *node) {
 
         case NODE_REAL: {
             node->valueType = TypeReal;
+            return;
+        }
+
+        case NODE_STRING_v:{
+            node->valueType = TypeString;
             return;
         }
 

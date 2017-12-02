@@ -60,29 +60,26 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
             addChild($$ , $7); 
             addChild($$ , $8);
             addChild($$ , $9);
-            deleteNode($10); //token DOT deleted
-            ASTRoot = $$;
-         };
+            deleteNode($10); 
+            ASTRoot = $$;};
 
 identifier_list : IDENTIFIER {
-                         $$ = newNode(NODE_LIST);
-                         addChild($$ , $1);                       
-                    };
+                        $$ = newNode(NODE_LIST);
+                        addChild($$ , $1);};
         | identifier_list COMMA IDENTIFIER {  
                             $$ = $1;
                             addChild($$ , $3);
-                            deleteNode($2); //token COMMA deleted
-                                           };
+                            deleteNode($2); };
 
 declarations : declarations VAR identifier_list COLON type SEMICOLON {
                         $$ = $1;
                         addChild($$ , $3);
                         addChild($$ , $5);
-                        deleteNode($2); // token VAR deleted
-                        deleteNode($4); // token COLON deleted
-                        deleteNode($6);}; // token SEMICOLON deleted
+                        deleteNode($2); 
+                        deleteNode($4); 
+                        deleteNode($6);}; 
                 | lambda {
-                        $$ = newNode(NODE_DECL);
+                        $$ = newNode(NODE_DECL); //handle declaration problem ex: array int real string_v
                     };
 
 type : standard_type {
@@ -90,6 +87,8 @@ type : standard_type {
         };
         | ARRAY LBRAC DIGSEQ DOTDOT DIGSEQ RBRAC OF type {
             $$ = $8;
+            struct node * tmp = newNode(NODE_TYPE_ARRAY);
+            addChild($$ , tmp);
             addChild($$ , $3);
             addChild($$ , $5);
             deleteNode($1);

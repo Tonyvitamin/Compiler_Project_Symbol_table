@@ -5,6 +5,8 @@ enum StdType {TypeInt, TypeReal , TypeString};
 
 struct SymTableEntry {
     char name[100];
+    int scope;
+    int links;
     enum StdType type;
 };
 

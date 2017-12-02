@@ -23,19 +23,18 @@ struct node;
 #define NODE_TYPE_INT       9
 #define NODE_TYPE_REAL      10
 #define NODE_TYPE_STRING    11
+#define NODE_TYPE_ARRAY     12
 
+#define NODE_ASSIGN_STMT    13
+#define NODE_SYM_REF        14
 
-#define NODE_ASSIGN_STMT    12
-#define NODE_SYM_REF        13
-
-#define NODE_WHILE          14
-#define NODE_VARIABLE       15
-#define NODE_lambda         16
+#define NODE_WHILE          15
+#define NODE_VARIABLE       16
+#define NODE_lambda         17
 
 //subprogram_declarations
-#define NODE_FUN_HEAD       17
-#define NODE_PRO_HEAD       18
-#define NODE_VAR_DECL       19
+#define NODE_FUN_HEAD       18
+#define NODE_PRO_HEAD       19
 
 #define NODE_LIST        50
 #define NODE_OPT_VAR        51
