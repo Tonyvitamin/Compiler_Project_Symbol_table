@@ -174,7 +174,8 @@ optional_var   : VAR {
 compound_statement : begin
 		       optional_statements
 		       END {    // create symbol table
-                        $$ = $2;
+                        $$ = newNODE(NODE_BEGIN);
+                        addChild($$ , $2);
                         deleteNode($1);
                         deleteNode($3);
                     };

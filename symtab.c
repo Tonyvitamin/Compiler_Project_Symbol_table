@@ -101,13 +101,27 @@ struct node* nthChild(int n, struct node *node) {
 
 void semanticCheck(struct node *node) {
     switch(node->nodeType) {
-        case NODE_IF: current_SymbolTable++;
-        case NODE_WHILE: current_SymbolTable++;
-        case NODE_PRO_HEAD: current_SymbolTable++;
-        case NODE_FUN_HEAD: current_SymbolTable++;
+        /*implement scope increase*/
+        case NODE_PROGRAM: { 
+            current_SymbolTable++;
+            return;
+        }
+        case NODE_BEGIN: { 
+            current_SymbolTable++;
+            return;
+        }
+        case NODE_FUN_HEAD: { 
+            current_SymbolTable++;
+            return;
+        }
+        case NODE_PRO_HEAD: { 
+            current_SymbolTable++;
+            return;
+        }
         case NODE_DECL: { //first declarations and should perform scope check
             /* We only implement integer and real type here,
                you should implement array type by yourself */
+
             struct node *typeNode = nthChild(2, node);//node type
             enum StdType valueType;
             if(typeNode->nodeType == NODE_TYPE_INT)
