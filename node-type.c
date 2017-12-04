@@ -94,6 +94,8 @@ void printTree(struct node *node, int ident) {
             break;
         case NODE_LIST:
             break;
+        case NODE_BEGIN:
+            break;
         case NODE_lambda:
             break;
         case NODE_IF:
