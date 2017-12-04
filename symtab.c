@@ -101,6 +101,10 @@ struct node* nthChild(int n, struct node *node) {
 
 void semanticCheck(struct node *node) {
     switch(node->nodeType) {
+        case NODE_IF: current_SymbolTable++;
+        case NODE_WHILE: current_SymbolTable++;
+        case NODE_PRO_HEAD: current_SymbolTable++;
+        case NODE_FUN_HEAD: current_SymbolTable++;
         case NODE_DECL: { //first declarations and should perform scope check
             /* We only implement integer and real type here,
                you should implement array type by yourself */
@@ -168,7 +172,7 @@ void semanticCheck(struct node *node) {
         case NODE_VAR_OR_PROC: 
         case NODE_SYM_REF: {
             struct SymTableEntry *entry = findSymbol(node->string);
-//            struct SymTableEntry *entry = findSymbol(node->string , curren_SymbolTable);
+//            struct SymTableEntry *entry = findSymbol(node->string , current_SymbolTable);
 
             if(entry == 0) {
                 printf("Error: undeclared variable %s\n", node->string);
