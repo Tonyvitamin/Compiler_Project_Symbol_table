@@ -96,6 +96,10 @@ void printTree(struct node *node, int ident) {
             break;
         case NODE_lambda:
             break;
+        case NODE_IF:
+            printf("%sIF\n" , blank);
+            ident++;
+            break;
         case NODE_PROGRAM:
             printf("%sPROGRAM\n", blank);
             ident++;
@@ -114,19 +118,25 @@ void printTree(struct node *node, int ident) {
         case NODE_TYPE_REAL:
             printf("%sTYPE_REAL\n", blank);
             break;
+        case NODE_TYPE_STRING:
+            printf("%sTYPE_STRING\n", blank);
+            break;
+        case NODE_TYPE_ARRAY:
+            printf("%sTYPE_ARRAY\n", blank);
+            break;
         case NODE_ASSIGN_STMT:
             printf("%sASSIGN_STMT\n", blank);
             ident++;
             break;
         case NODE_FUN_HEAD:
-            printf("%sFUNCTION_HEAD\n" , blank);
+            printf("%sFUNCTION\n" , blank);
             ident++;
             break;
         case NODE_PRO_HEAD:
-            printf("%sPROCEDURE_HEAD\n" , blank);
+            printf("%sPROCEDURE\n" , blank);
             ident++;
             break;
-        case NODE_SYM_REF:
+        case NODE_SYM_REF: //check declaration
             printf("%sSYM_REF %s\n", blank, node->string);
             break;
     }

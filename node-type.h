@@ -28,16 +28,20 @@ struct node;
 #define NODE_ASSIGN_STMT    13
 #define NODE_SYM_REF        14
 
-#define NODE_WHILE          15
-#define NODE_VARIABLE       16
-#define NODE_lambda         17
+#define NODE_VARIABLE       15
+#define NODE_lambda         16
 
 //subprogram_declarations
-#define NODE_FUN_HEAD       18
-#define NODE_PRO_HEAD       19
+#define NODE_FUN_HEAD       17
+#define NODE_PRO_HEAD       18
 
-#define NODE_LIST        50
+#define NODE_LIST           50
 #define NODE_OPT_VAR        51
+
+//statement
+#define NODE_IF             52
+#define NODE_WHILE          53
+
 
 
 #define NODE_VAR_OR_PROC    99

@@ -49,7 +49,7 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
      declarations
      subprogram_declarations
      compound_statement
-     DOT {
+     DOT {  //create symbol table
             $$ = newNode(NODE_PROGRAM);
             addChild($$ , $2);
             addChild($$ , $4);
@@ -86,11 +86,10 @@ type : standard_type {
             $$ = $1;
         };
         | ARRAY LBRAC DIGSEQ DOTDOT DIGSEQ RBRAC OF type {
-            $$ = $8;
-            struct node * tmp = newNode(NODE_TYPE_ARRAY);
-            addChild($$ , tmp);
+            $$ = newNode(NODE_TYPE_ARRAY);
             addChild($$ , $3);
             addChild($$ , $5);
+            addChild($$ , $8);
             deleteNode($1);
             deleteNode($2);
             deleteNode($4);
@@ -127,7 +126,7 @@ subprogram_declaration : subprogram_head
                 addChild($$ , $2);
                 addChild($$ , $3);};
 
-subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON {
+subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON { //create symbol table
                     $$ = newNode(NODE_FUN_HEAD);
                     //addChild($$ , $1); not sure "FUNCTION" meaning 
                     deleteNode($1);
@@ -136,7 +135,7 @@ subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON {
                     addChild($$ , $5);
                     deleteNode($4);
                     deleteNode($6);};
-	| PROCEDURE IDENTIFIER arguments SEMICOLON {
+	| PROCEDURE IDENTIFIER arguments SEMICOLON { //create symbol table
                     $$ =  newNode(NODE_PRO_HEAD);
                     //addChild($$ , $1); not sure "PROCEDURE" meaning
                     deleteNode($1);
@@ -156,8 +155,7 @@ parameter_list : optional_var identifier_list COLON type {
                         $$ = $2;
                         addChild($$ , $4);
                         deleteNode($1);
-                        deleteNode($3);
-                                                         };
+                        deleteNode($3);};
 	| optional_var identifier_list COLON type SEMICOLON parameter_list {
             $$ = $2;
             addChild($$ , $4);
@@ -175,7 +173,7 @@ optional_var   : VAR {
 
 compound_statement : begin
 		       optional_statements
-		       END {
+		       END {    // create symbol table
                         $$ = $2;
                         deleteNode($1);
                         deleteNode($3);
@@ -183,8 +181,7 @@ compound_statement : begin
 
 
 optional_statements : statement_list {
-                            $$ = $1;
-                                     };
+                            $$ = $1;};
 
 
 statement_list : statement {
@@ -199,7 +196,7 @@ statement : variable ASSIGNMENT expression {
                 $$ = newNode(NODE_ASSIGN_STMT);
                 addChild($$ , $1);
                 addChild($$ , $3);
-                $1->nodeType = NODE_SYM_REF;
+                $1->nodeType = NODE_SYM_REF; //check declaration
                 deleteNode($2);};
 	| procedure_statement {
                 $$ = $1;
@@ -207,38 +204,46 @@ statement : variable ASSIGNMENT expression {
 	| compound_statement {
                 $$ = $1;
                          };
-	| IF expression THEN statement ELSE statement {
-                        $$ = $1;
+	| IF expression THEN statement ELSE statement { //creat scope
+                        //semantic if here
+                        $$ = newNode(NODE_IF);
                         addChild($$ , $2);
+                        addChild($$ , $3);
                         addChild($$ , $4);
+                        addChild($$ , $5);
                         addChild($$ , $6);
-                        deleteNode($3);
-                        deleteNode($5);};
-	| WHILE expression DO statement {
+                        deleteNode($1);
+                        //deleteNode($3);
+                        //deleteNode($5);
+                        };
+	| WHILE expression DO statement { // create scope
+            //semantic while here
             $$ = newNode(NODE_WHILE);
             addChild($$ , $2);
             addChild($$ , $4);
             deleteNode($1);
             deleteNode($3);};
-	| lambda {$$ = newNode(NODE_lambda);};
+	| lambda {$$ = newNode(NODE_LIST);};
 
 
 variable : IDENTIFIER tail {
-                $$ = newNode(NODE_VARIABLE);
-                addChild($$ , $1);
+                $$ = $1;
+                //addChild($$ , $1);
                 addChild($$ , $2);};
 
 tail     : LBRAC expression RBRAC tail { 
                     $$ = $4;
+                    addChild($$ , $1);
                     addChild($$ , $2);
-                    deleteNode($1);
-                    deleteNode($3);};
+                    addChild($$ , $3);
+                    };
 
-	| lambda {$$ = newNode(NODE_lambda);};
+	| lambda {$$ = newNode(NODE_LIST);};
 
 
 procedure_statement : IDENTIFIER {
-                            $$ = $1;
+                            $$ = newNode(NODE_LIST);
+                            addChild($$ , $1);
                                  };
 	| IDENTIFIER LPAREN expression_list RPAREN {
                 $$ = newNode(NODE_LIST);
