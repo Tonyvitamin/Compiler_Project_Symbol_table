@@ -15,8 +15,8 @@ PROGRAM foo(input, output, error) ;
    procedure sort(a: array [ 1 .. 10 ] of integer);
       var a, b, c: integer; // duplicated declaration
       begin
-        e := a + d        // WRONG 2: a is an int variable while d is an array.
-	a := qqq - rrr;   // WRONG 3: qqq and rrr are undefined variables
+        e := a + d  ;      // WRONG 2: a is an int variable while d is an array.
+	      a := qqq - rrr;   // WRONG 3: qqq and rrr are undefined variables
         d := f(k, e);     // WRONG 4: f is undefined function
       end;
 
@@ -65,7 +65,7 @@ PROGRAM foo(input, output, error) ;
       k[25][26] := k[25][26] + 3;     // good
       k[25][126]  := 3.14;   // index out of bound
       k[125][26]  := 3.14;   // index out of bound
-      k[125][126] := 3.14    // index out of bound
+      k[125][126] := 3.14 ;   // index out of bound
       a := extf(20, sum);    // WARNING 7: can your compiler handle external functions?
 
 
@@ -79,13 +79,13 @@ PROGRAM foo(input, output, error) ;
        // Warning 9: How do your compiler handle conditional compilation?
  
       #if !defined(__unix__)
-      #include Long40.h¡¨
+      #include Long40.hï¿½ï¿½
        k[25][26] := k[25][26] + 5;     // good
       #elif defined(_TMS320C6200)
       #define assert(a)
        k[25][26] := k[25][26] + 333;     // good
       #else
-      #include ¡¨Long40.h¡¨
+      #include ï¿½ï¿½Long40.hï¿½ï¿½
        k[25][26] := k[25][26] + 6666;     // good
       #include <assert.h>
       #endif
