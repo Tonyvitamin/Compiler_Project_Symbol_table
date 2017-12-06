@@ -11,32 +11,37 @@ struct array_descriptor * newArrayDes(enum StdType type){
     array_descriptor->type = type;
     array_descriptor->array_begin = 0;
     array_descriptor->array_end = 0;
-    array_descriptor->array_child = array_descriptor;
+    array_descriptor->next_array = array_descriptor;
     return array_descriptor;
+}
+//new function attribute
+struct function_attribute * newFunctionAttr(enum StdType type){
+    struct function_attribute * function = (struct function_attribute *)malloc(sizeof(struct function_attribute));
+    
 }
 //extend array descriptor list 
 void add_ArrayDescri_list(struct  array_descriptor * root , struct array_descriptor * child){
     struct array_descriptor * point = root;
-    while(point->array_child != point)
-        point = point->array_child;
-    point->array_child = child;
+    while(point->next_array != point)
+        point = point->next_array;
+    point->next_array = child;
     return ;
 }
 
 /*search the symbol table for the pattern within the same scope*/
 struct SymTableEntry* findSymbol_in_scope(char *s) {
     for(int i = 0 ; i < SymbolTable.size ; i++){
-        struct SymTableEntry * it = SymbolTable.entries[i];
-        if(strcmp(s, it.name) == 0 && it->level == SymbolTable->current_level) 
+        struct SymTableEntry * it = &SymbolTable.entries[i];
+        if(strcmp(s, it->name) == 0 && it->level == SymbolTable.current_level) 
             return it;
     }
     return 0;
 }
 /*search the symbol table for the variable within the global scope*/
 struct SymTableEntry* findSymbol_in_global(char *s) {
-    for(int i = SymTableEntry.size ; i >= 0 ; i--){
-        struct SymTableEntry * it = SymbolTable.entries[i];
-        if(strcmp(s, it.name) == 0 && it->level <= SymbolTable->current_level) 
+    for(int i = SymbolTable.size ; i >= 0 ; i--){
+        struct SymTableEntry * it = &SymbolTable.entries[i];
+        if(strcmp(s, it->name) == 0 && it->level <= SymbolTable.current_level) 
             return it;
     }
     return 0;
@@ -53,15 +58,52 @@ struct SymTableEntry* addVariable(char *s, enum StdType type , struct array_desc
     
     strcpy(SymbolTable.entries[index].name, s);
     SymbolTable.entries[index].type = type;
-    SymbolTable.entries[index].level = current_level;
+    SymbolTable.entries[index].level = SymbolTable.current_level;
+    
     if(type == TypeArray)
         SymbolTable.entries[index].array = array_desc;
+    
+    printf("Enter variable %s in symbol table\n" , s);
+    return &SymbolTable.entries[index];
+}
+
+//enter function into a symbol table
+struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_attribute * function) {
+    if(findSymbol_in_global(s) != 0) { 
+        printf("Error: duplicate declaration of function %s\n", s);
+        exit(0);
+    }
+
+    int index = SymbolTable.size;
+    SymbolTable.size++;
+    
+    strcpy(SymbolTable.entries[index].name, s);
+    SymbolTable.entries[index].type = type;
+    SymbolTable.entries[index].level = SymbolTable.current_level;
+    SymbolTable.entries[index].function = function;
+    
+    printf("Enter function %s in symbol table\n" , s);
+    return &SymbolTable.entries[index];
+}
+
+//enter procedure into a symbol table
+struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure_attribute * procedure) {
+    if(findSymbol_in_global(s) != 0) { 
+        printf("Error: duplicate declaration of procedure %s\n", s);
+        exit(0);
+    }
+
+    int index = SymbolTable.size;
+    SymbolTable.size++;
+    
+    strcpy(SymbolTable.entries[index].name, s);
+    SymbolTable.entries[index].type = type;
+    SymbolTable.entries[index].level = SymbolTable.current_level;
+    SymbolTable.entries[index].procedure = procedure;
     
     printf("Enter %s in symbol table\n" , s);
     return &SymbolTable.entries[index];
 }
-
-
 //find and return nth child in an node
 struct node* nthChild(int n, struct node *node) {
     struct node *child = node->child;
@@ -80,6 +122,17 @@ void semanticCheck(struct node *node) {
         case NODE_FUN_HEAD: { 
             SymbolTable.current_level++;
             struct node * function_name = nthChild(1 , node);
+            struct node * typeNode = nthChild(3 , node);
+            enum StdType valueType;
+            if(typeNode->nodeType == NODE_TYPE_INT)
+                valueType = TypeInt;
+            else if(typeNode->nodeType == NODE_TYPE_REAL)
+                valueType = TypeReal;
+            else if(typeNode->nodeType == NODE_TYPE_STRING)
+                valueType = TypeString;
+            addVariable(function_name->string , valueType , 0);
+
+
             SymbolTable.current_level--;
         }
         case NODE_PRO_HEAD: { 
@@ -89,7 +142,7 @@ void semanticCheck(struct node *node) {
         case NODE_END:{
             SymbolTable.current_level--;
         }
-        case NODE_DECL: { //first declarations and should perform scope check
+        case NODE_DECL: { //var declarations and should perform scope check
             /* We only implement integer and real type here,
                you should implement array type by yourself */
 
@@ -111,10 +164,11 @@ void semanticCheck(struct node *node) {
                 int end = array_node->iValue;
                 array_node = array_node->rsibling;                
                 enum StdType arrayType = array_node->nodeType;
-
+                int capacity = end -start;
                 struct array_descriptor * array_desc_root = newArrayDes(arrayType);
                 array_desc_root->array_begin = start;
                 array_desc_root->array_end = end;
+                array_desc_root->capacity = capacity;
 
                 //create array descriptor link list
                 while(array_node->nodeType == TypeArray)
@@ -141,7 +195,7 @@ void semanticCheck(struct node *node) {
                 return;
             }
 
-
+            //int real string handle
             struct node *idList = nthChild(1, node);
             struct node *idNode = idList->child;
             do {
@@ -156,8 +210,7 @@ void semanticCheck(struct node *node) {
            the symbol is a variable or a function with no parameter */
         case NODE_VAR_OR_PROC: 
         case NODE_SYM_REF: {
-            struct SymTableEntry *entry = findSymbol(node->string);
-//            struct SymTableEntry *entry = findSymbol(node->string , current_SymbolTable);
+            struct SymTableEntry *entry = findSymbol_in_global(node->string);
 
             if(entry == 0) {
                 printf("Error: undeclared variable %s\n", node->string);
@@ -166,31 +219,42 @@ void semanticCheck(struct node *node) {
 
             node->entry = entry;
             node->valueType = entry->type;
-
+            if(entry->type == TypeProcedure) {
+                node->procedure = entry->procedure;
+            }
+            else if (entry->type == TypeFunction) {
+                node->function = entry->function;
+            }
+            else if(entry->type == TypeArray) {
+                node->array = entry->array;
+            }
             return;
         }
 
-        //NODE type 
-        case NODE_INT: {
+
+        /* Only implemented binary op here, you should implement unary op */
+        case NODE_OP:{
+            switch(node->op){
+                case OP_ADD:{
+                    
+                }
+
+            }
+        }
+
+
+        case NODE_INT:{
             node->valueType = TypeInt;
             return;
         }
-
-        case NODE_REAL: {
+        case NODE_REAL:{
             node->valueType = TypeReal;
             return;
         }
-
         case NODE_STRING_v:{
             node->valueType = TypeString;
             return;
         }
-
-        /* Only implemented binary op here, you should implement unary op */
-        case NODE_OP:{
-
-        }
-
         /* You should check the LHS of assign stmt is assignable
            You should also report error if LHS is a function with no parameter 
            (function is not implemented in this sample, you should implement it) */ 

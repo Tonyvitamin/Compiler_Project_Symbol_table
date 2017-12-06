@@ -130,7 +130,6 @@ subprogram_declaration : subprogram_head
 
 subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON { //create symbol table
                     $$ = newNode(NODE_FUN_HEAD);
-                    //addChild($$ , $1); not sure "FUNCTION" meaning 
                     deleteNode($1);
                     addChild($$ , $2);
                     addChild($$ , $3);
@@ -139,7 +138,6 @@ subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON { 
                     deleteNode($6);};
 	| PROCEDURE IDENTIFIER arguments SEMICOLON { //create symbol table
                     $$ =  newNode(NODE_PRO_HEAD);
-                    //addChild($$ , $1); not sure "PROCEDURE" meaning
                     deleteNode($1);
                     addChild($$ , $2);
                     addChild($$ , $3);
@@ -232,8 +230,8 @@ statement : variable ASSIGNMENT expression {
 
 
 variable : IDENTIFIER tail {
-                $$ = $1;
-                //addChild($$ , $1);
+                $$ = newNode(NODE_SYM_REF);
+                addChild($$ , $1);
                 addChild($$ , $2);};
 
 tail     : LBRAC expression RBRAC tail { 
@@ -247,11 +245,11 @@ tail     : LBRAC expression RBRAC tail {
 
 
 procedure_statement : IDENTIFIER {
-                            $$ = newNode(NODE_LIST);
+                            $$ = newNode(NODE_SYM_REF);//without parameter
                             addChild($$ , $1);
                                  };
 	| IDENTIFIER LPAREN expression_list RPAREN {
-                $$ = newNode(NODE_LIST);
+                $$ = newNode(NODE_SYM_REF);
                 addChild($$ , $1);
                 addChild($$ , $3);
                 deleteNode($2);
@@ -294,11 +292,13 @@ term : factor {
 
 
 factor : IDENTIFIER tail {
-            $$ = $1;
+            $$ = newNode(NODE_SYM_REF);
+            addChild($$ , $1);
             addChild($$ , $2);
                          };
 	| IDENTIFIER LPAREN expression_list RPAREN {
-            $$ = $1;
+            $$ = newNode(NODE_SYM_REF);
+            addChild($$ , $1);
             addChild($$ , $3);
             deleteNode($2);
             deleteNode($4);};

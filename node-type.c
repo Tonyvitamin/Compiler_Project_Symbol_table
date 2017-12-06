@@ -96,7 +96,7 @@ void printTree(struct node *node, int ident) {
             break;
         case NODE_BEGIN: //node begin
             break;
-        case NODE_END; //node end
+        case NODE_END: //node end
             break;
         case NODE_lambda: //not working 
             break;
@@ -141,7 +141,7 @@ void printTree(struct node *node, int ident) {
             ident++;
             break;
         case NODE_SYM_REF: //check declaration
-            printf("%sSYM_REF %s\n", blank, node->string);
+            printf("%sSYM_REF \n", blank);
             break;
     }
 

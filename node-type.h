@@ -43,7 +43,7 @@ struct node;
 #define NODE_WHILE          53
 #define NODE_BEGIN          54
 #define NODE_END            55
-
+#define NODE_FUN_PRO_REF    56
 
 #define NODE_VAR_OR_PROC    99
 #define NODE_ERROR          100
@@ -91,7 +91,9 @@ struct node {
     /* Indicates which OP */
     char op;
     
-
+    struct array_descriptor * array;
+    struct function_attribute * function;
+    struct procedure_attribute * procedure;
     enum StdType valueType;
     struct SymTableEntry *entry;
 
