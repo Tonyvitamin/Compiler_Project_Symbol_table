@@ -42,6 +42,7 @@ struct node;
 #define NODE_IF             52
 #define NODE_WHILE          53
 #define NODE_BEGIN          54
+#define NODE_END            55
 
 
 #define NODE_VAR_OR_PROC    99

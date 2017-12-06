@@ -92,11 +92,13 @@ void printTree(struct node *node, int ident) {
         case NODE_STRING_v:
             printf("%s%s\n", blank, node->string);
             break;
-        case NODE_LIST:
+        case NODE_LIST: //declaration list
             break;
-        case NODE_BEGIN:
+        case NODE_BEGIN: //node begin
             break;
-        case NODE_lambda:
+        case NODE_END; //node end
+            break;
+        case NODE_lambda: //not working 
             break;
         case NODE_IF:
             printf("%sIF\n" , blank);

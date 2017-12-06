@@ -52,7 +52,9 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
      DOT {  //create symbol table
             $$ = newNode(NODE_PROGRAM);
             addChild($$ , $2);
-            addChild($$ , $4);
+            struct node * argv_decl = newNode(NODE_DECL);
+            addChild($$ , argv_decl);
+            addChild(argv_decl , $4);
             deleteNode($1); 
             deleteNode($3); 
             deleteNode($5); 
@@ -152,23 +154,23 @@ arguments : LPAREN parameter_list RPAREN {
 
 
 parameter_list : optional_var identifier_list COLON type {
-                        $$ = $2;
+                        $$ = $1;
+                        addChild($$ , $2);
                         addChild($$ , $4);
-                        deleteNode($1);
                         deleteNode($3);};
 	| optional_var identifier_list COLON type SEMICOLON parameter_list {
-            $$ = $2;
+            $$ = $1;
+            addChild($$ , $2);
             addChild($$ , $4);
             addChild($$ , $6);
-            deleteNode($1);
             deleteNode($3);
             deleteNode($5);};
 
 optional_var   : VAR {
-                        $$ = newNode(NODE_OPT_VAR);
+                        $$ = newNode(NODE_DECL);
                         deleteNode($1);
                      };
-        | lambda {$$ = newNode(NODE_OPT_VAR);};
+        | lambda {$$ = newNode(NODE_DECL);};
 
 
 compound_statement : begin
@@ -176,6 +178,8 @@ compound_statement : begin
 		       END {    // create symbol table
                         $$ = newNode(NODE_BEGIN);
                         addChild($$ , $2);
+                        struct node * temp = newNode(NODE_END);
+                        addChild($$ , temp);
                         deleteNode($1);
                         deleteNode($3);
                     };
