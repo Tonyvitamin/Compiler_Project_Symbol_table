@@ -72,7 +72,6 @@ struct SymTable {
 };
 
 extern struct SymTable SymbolTable;
-//extern struct SymTable SymbolTable[200];
 #include "node-type.h"
 void semanticCheck(struct node* node);
 

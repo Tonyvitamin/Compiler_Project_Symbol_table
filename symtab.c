@@ -114,12 +114,15 @@ struct node* nthChild(int n, struct node *node) {
 }
 
 void semanticCheck(struct node *node) {
+    printf("%d\n" , node->nodeType);
     switch(node->nodeType) {
         /*implement scope increase*/
-        case NODE_BEGIN: { 
+        case NODE_BEGIN: { //printf("here\n");
             SymbolTable.current_level++;
+            printf("%d %d begin works\n" , node->nodeType , NODE_FUN_HEAD);
         }
-        case NODE_FUN_HEAD: { 
+    
+        case NODE_FUN_HEAD: { printf("here\n");printf("%d %d function works\n" , node->nodeType , NODE_FUN_HEAD);
             SymbolTable.current_level++;
             struct node * function_name = nthChild(1 , node);
             struct node * typeNode = nthChild(3 , node);
@@ -131,18 +134,17 @@ void semanticCheck(struct node *node) {
             else if(typeNode->nodeType == NODE_TYPE_STRING)
                 valueType = TypeString;
             addVariable(function_name->string , valueType , 0);
-
-
             SymbolTable.current_level--;
         }
-        case NODE_PRO_HEAD: { 
+        case NODE_PRO_HEAD: { //printf("here\n");
             SymbolTable.current_level++;
             SymbolTable.current_level--;
         }
-        case NODE_END:{
+        case NODE_END:{//printf("here\n");
             SymbolTable.current_level--;
+            return;
         }
-        case NODE_DECL: { //var declarations and should perform scope check
+        case NODE_DECL: { //printf("here\n");//var declarations and should perform scope check
             /* We only implement integer and real type here,
                you should implement array type by yourself */
 
@@ -208,10 +210,11 @@ void semanticCheck(struct node *node) {
 
         /* This case is simplified, actually you should check
            the symbol is a variable or a function with no parameter */
-        case NODE_VAR_OR_PROC: 
-        case NODE_SYM_REF: {
+        //case NODE_VAR_OR_PROC: 
+        case NODE_SYM_REF: {//printf("where\n");
+        //printf("here\n");
             struct SymTableEntry *entry = findSymbol_in_global(node->string);
-
+            //printf("where\n");
             if(entry == 0) {
                 printf("Error: undeclared variable %s\n", node->string);
                 exit(0);
@@ -233,32 +236,40 @@ void semanticCheck(struct node *node) {
 
 
         /* Only implemented binary op here, you should implement unary op */
-        case NODE_OP:{
-            switch(node->op){
-                case OP_ADD:{
-                    
-                }
+        case NODE_OP:{//printf("here\n");
+                    struct node * child1 = nthChild(1 , node);
+                    struct node * child2 = nthChild(2 , node);
+                    if(child1 != child2){//binary op 
+                        semanticCheck(child1);
+                        semanticCheck(child2);
+                    }
+                    else 
+                        semanticCheck(child1);//unary op
 
-            }
+                    if(child1->valueType == child2->valueType)
+                        node->valueType = child1->valueType;
+                    else {
+                        printf("type errors in arithmetic expression\n");
+                    }
         }
 
 
-        case NODE_INT:{
+        case NODE_INT:{//printf("here\n");
             node->valueType = TypeInt;
             return;
         }
-        case NODE_REAL:{
+        case NODE_REAL:{//printf("here\n");
             node->valueType = TypeReal;
             return;
         }
-        case NODE_STRING_v:{
+        case NODE_STRING_v:{//printf("here\n");
             node->valueType = TypeString;
             return;
         }
         /* You should check the LHS of assign stmt is assignable
            You should also report error if LHS is a function with no parameter 
            (function is not implemented in this sample, you should implement it) */ 
-        case NODE_ASSIGN_STMT: {
+        case NODE_ASSIGN_STMT: {//printf("here\n");
             struct node *child1 = nthChild(1, node);
             struct node *child2 = nthChild(2, node);
             semanticCheck(child1);
@@ -281,11 +292,15 @@ void semanticCheck(struct node *node) {
 
             return;
         }
+
     }
+    
 
     /* Default action for other nodes not listed in the switch-case */
     struct node *child = node->child;
-    if(child != 0) {
+
+
+    if(child != NULL) {
         do {
             semanticCheck(child);
             child = child->rsibling;

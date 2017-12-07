@@ -3,7 +3,7 @@
  #include <stdlib.h>
  #include "node-type.h"
  #include "symtab.h"
-
+    extern struct SymTable SymbolTable;
     struct node *  ASTRoot;
     struct node * newOpNode(int op);
     /* Called by yyparse on error.  */
@@ -52,9 +52,7 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
      DOT {  //create symbol table
             $$ = newNode(NODE_PROGRAM);
             addChild($$ , $2);
-            struct node * argv_decl = newNode(NODE_DECL);
-            addChild($$ , argv_decl);
-            addChild(argv_decl , $4);
+            deleteNode($4);
             deleteNode($1); 
             deleteNode($3); 
             deleteNode($5); 
@@ -394,11 +392,12 @@ int main(int argc, char** argv) {
     printf("-----------------------------------------------\n");
     printTree(ASTRoot, 0);
 
-    //SymbolTable.size = 0;
-    //sematicCheck(ASTRoot);
-    //printf("********************************\n"
-    //       "*      No semantic error!      *\n"
-    //      "********************************\n");
+    SymbolTable.size = 0;
+    SymbolTable.current_level = 0;
+    semanticCheck(ASTRoot);
+    printf("********************************\n"
+           "*      No semantic error!      *\n"
+          "********************************\n");
     
     return 0;
 }

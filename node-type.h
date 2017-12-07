@@ -76,11 +76,6 @@ struct node {
     /* Attribute for NODE_TOKEN */
     int tokenType;
 
-    /* items for Array */
-    int idxstart;
-    int idxend;
-    int arraydepth;
-    struct node *ref;
 
     /* Values for general use */
     int iValue;
@@ -91,6 +86,7 @@ struct node {
     /* Indicates which OP */
     char op;
     
+    /*attribute and symbol table referred entry */
     struct array_descriptor * array;
     struct function_attribute * function;
     struct procedure_attribute * procedure;
