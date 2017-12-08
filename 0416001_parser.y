@@ -155,10 +155,10 @@ parameter_list : optional_var identifier_list COLON type {
                         addChild($$ , $4);
                         deleteNode($3);};
 	| optional_var identifier_list COLON type SEMICOLON parameter_list {
-            $$ = $1;
+            $$ = $6;
             addChild($$ , $2);
             addChild($$ , $4);
-            addChild($$ , $6);
+            //addChild($$ , $6);
             deleteNode($3);
             deleteNode($5);};
 
@@ -217,8 +217,7 @@ statement : variable ASSIGNMENT expression {
                         //deleteNode($3);
                         //deleteNode($5);
                         };
-	| WHILE expression DO statement { // create scope
-            //semantic while here
+	| WHILE expression DO statement {
             $$ = newNode(NODE_WHILE);
             addChild($$ , $2);
             addChild($$ , $4);
@@ -229,14 +228,16 @@ statement : variable ASSIGNMENT expression {
 
 variable : IDENTIFIER tail {
                 $$ = newNode(NODE_SYM_REF);
-                addChild($$ , $1);
+                $$->string =  $1->string;
                 addChild($$ , $2);};
 
 tail     : LBRAC expression RBRAC tail { 
                     $$ = $4;
-                    addChild($$ , $1);
+                    addChild($$ , newOpNode(OP_LBRAC));
                     addChild($$ , $2);
-                    addChild($$ , $3);
+                    addChild($$ , newOpNode(OP_RBRAC));
+                    deleteNode($1);
+                    deleteNode($3);
                     };
 
 	| lambda {$$ = newNode(NODE_LIST);};
@@ -244,11 +245,13 @@ tail     : LBRAC expression RBRAC tail {
 
 procedure_statement : IDENTIFIER {
                             $$ = newNode(NODE_SYM_REF);//without parameter
-                            addChild($$ , $1);
+                            $$->string = $1->string;
+                            deleteNode($1);
                                  };
 	| IDENTIFIER LPAREN expression_list RPAREN {
                 $$ = newNode(NODE_SYM_REF);
-                addChild($$ , $1);
+                $$->string = $1->string;
+                deleteNode($1);
                 addChild($$ , $3);
                 deleteNode($2);
                 deleteNode($4);};
@@ -289,14 +292,15 @@ term : factor {
             addChild($$ , $3);};
 
 
-factor : IDENTIFIER tail {
+factor : IDENTIFIER tail { //call declared variable , function , procedure 
             $$ = newNode(NODE_SYM_REF);
-            addChild($$ , $1);
+            $$->string = $1->string;
             addChild($$ , $2);
                          };
 	| IDENTIFIER LPAREN expression_list RPAREN {
             $$ = newNode(NODE_SYM_REF);
-            addChild($$ , $1);
+            $$->string = $1->string;
+            deleteNode($1);
             addChild($$ , $3);
             deleteNode($2);
             deleteNode($4);};

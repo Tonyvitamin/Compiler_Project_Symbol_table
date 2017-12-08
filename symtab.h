@@ -17,7 +17,7 @@ Every Symbol table's first entry is the name(function , procedure , ) for the sc
 #define global_domain 1
 #define while_domain 2
 
-enum StdType {TypeInt, TypeReal , TypeString , TypeArray , TypeFunction , TypeProcedure};
+enum StdType {TypeInt, TypeReal , TypeString , TypeArray , TypeFunction , TypeProcedure , TypeNULL};
 
 extern int current_level;
 
@@ -44,19 +44,8 @@ struct procedure_attribute{
     struct param_list * param;
 };
 
-struct expr {
-    char name[20];
-    char kind[30];
-    int size ;
-    struct SymTableEntry * entry;
-    enum StdType type ;
-    struct array_descriptor * array;    
-    struct expr * next_expr ; 
-};
-
 struct SymTableEntry {
     char name[100];
-    int  kind;
     int level;
     enum StdType type;
     struct procedure_attribute * procedure;

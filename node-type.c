@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include "y.tab.h"
 #include "node-type.h"
 
 struct node* newNode(int type) {
@@ -43,8 +44,18 @@ void printTree(struct node *node, int ident) {
 
     switch(node->nodeType) {
         case NODE_TOKEN:
-        printf("%sToken %s\n", blank, node->string);
-        break;
+            if(node->tokenType == DIGSEQ){
+                printf("%sToken %d\n" , blank , node->iValue);
+                break;
+            }
+            else if(node->tokenType == REALNUMBER){
+                printf("%sToken %f\n" , blank , node->rValue);
+                break;
+            }
+            else {
+                printf("%sToken %s\n", blank, node->string);
+                break;
+            }
         case NODE_OP:
             switch(node->op) {
                 case OP_ADD:
@@ -77,6 +88,12 @@ void printTree(struct node *node, int ident) {
                 case OP_NE:
                     printf("%s!=\n", blank);
                     break;
+                case OP_LBRAC:
+                    printf("%s[\n", blank);
+                    break;
+                case OP_RBRAC:
+                    printf("%s]\n", blank);
+                    break;
             }
             ident++;
             break;
@@ -93,7 +110,8 @@ void printTree(struct node *node, int ident) {
             printf("%s%s\n", blank, node->string);
             break;
         case NODE_LIST: //declaration list  
-        printf("%slist\n" , blank);    
+        printf("%slist\n" , blank); 
+        ident++;   
         break;
         case NODE_BEGIN:
             printf("%sBEGIN\n" , blank); //node begin
@@ -130,6 +148,7 @@ void printTree(struct node *node, int ident) {
             break;
         case NODE_TYPE_ARRAY:
             printf("%sTYPE_ARRAY\n", blank);
+            ident++;            
             break;
         case NODE_ASSIGN_STMT:
             printf("%sASSIGN_STMT\n", blank);
@@ -144,7 +163,7 @@ void printTree(struct node *node, int ident) {
             ident++;
             break;
         case NODE_SYM_REF: //check declaration
-            printf("%sSYM_REF \n", blank);
+            printf("%sSYM_REF %s\n", blank , node->string);
             break;
     }
 

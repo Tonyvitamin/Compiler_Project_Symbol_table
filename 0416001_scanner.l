@@ -251,13 +251,14 @@ NQUOTE [^']
 }
 
 "]"            {
-      yylval.node_t = newTokenNode(RBRAC); 
+      yylval.node_t = newTokenNode(RBRAC);
       return(RBRAC);
 }
 
 [0-9]+"."[0-9]+  |
 "-"[0-9]+"."[0-9]+            {
-                  yylval.node_t = newTokenNode(REALNUMBER); 
+                  yylval.node_t = newTokenNode(REALNUMBER);
+                  yylval.node_t->rValue = atof(yytext); 
                   return(REALNUMBER);
 }
 
