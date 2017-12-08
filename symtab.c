@@ -21,11 +21,13 @@ void popSymbolTable(){
         }
     }
 }
-struct param_list * newParam(){
+struct param_list * newParam(char * s , enum StdType type){
     struct param_list * param_list = (struct param_list *)malloc(sizeof(struct param_list));
-    param_list->type = TypeNULL;
+    param_list->type = type;
+    strcpy(param_list->name , s);
     param_list->array = NULL;
     param_list->next_param = param_list;
+    return param_list;
 }
 //add parameter into parameter list
 void add_param(struct param_list * root , struct param_list * child){
@@ -120,7 +122,7 @@ struct SymTableEntry* findSymbol_in_scope(char *s) {
         struct SymTableEntry * it = &SymbolTable.entries[i];
         if(strcmp(s, it->name) == 0 && it->level == SymbolTable.current_level) 
             {
-                printf("%d , %d" , it->level , SymbolTable.current_level);
+                printf("%d , %d\n" , it->level , SymbolTable.current_level);
                 return it;
             }
     }
@@ -135,11 +137,12 @@ struct SymTableEntry* findSymbol_in_global(char *s) {
     }
     return 0;
 }
-//enter variable into a symbol table
+//////////////////// enter variable into a symbol table ///////////////
 struct SymTableEntry* addVariable(char *s, enum StdType type , struct array_descriptor * array_desc) {
     if(findSymbol_in_scope(s) != 0) { 
         printf("Error: duplicate declaration of variable %s\n", s);
-        exit(0);
+        return 0;
+        //exit(0);
     }
 
     int index = SymbolTable.size;
@@ -155,7 +158,7 @@ struct SymTableEntry* addVariable(char *s, enum StdType type , struct array_desc
     printf("Enter variable %s in symbol table at level %d\n" , s , SymbolTable.entries[index].level);
     return &SymbolTable.entries[index];
 }
-//enter function into a symbol table
+//////////////////// enter function into a symbol table ///////////////
 struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_attribute * function) {
     if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of function %s\n", s);
@@ -173,7 +176,7 @@ struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_a
     printf("Enter function %s in symbol table at level %d\n" , s , SymbolTable.entries[index].level);
     return &SymbolTable.entries[index];
 }
-//enter procedure into a symbol table
+//////////////////// enter procedure into a symbol table //////////////
 struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure_attribute * procedure) {
     if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of procedure %s\n", s);
@@ -191,7 +194,7 @@ struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure
     printf("Enter procedure %s in symbol table at level %d\n" , s , SymbolTable.entries[index].level);
     return &SymbolTable.entries[index];
 }
-//find and return nth child in an node
+/////////////////// find and return nth child in an node ////////////////
 struct node* nthChild(int n, struct node *node) {
     struct node *child = node->child;
     for(int i=1; i<n; i++) {
@@ -199,55 +202,70 @@ struct node* nthChild(int n, struct node *node) {
     }
     return child;
 }
-
+////////////////// initiate argument(s) of function procedure //////////////////
+struct param_list * initParam(struct node * parameter ){
+    struct node * typeList = parameter->child;//node decls                
+    struct node * idList = typeList->child;//node list
+    struct node * index = idList;
+    struct param_list * param_root = newParam(idList->string , StdtypeCheck(typeList));                
+    typeList = typeList->rsibling;
+    if(param_root->type == TypeArray){
+        struct array_descriptor * array_desc_root = initArray(typeList->child);
+        param_root->array = array_desc_root;
+    }
+    
+    idList = idList->rsibling;
+    while(typeList != parameter->child){//to be continued
+        enum StdType type = StdtypeCheck(typeList);
+        while(idList != index){
+            struct param_list * nextParam = newParam(idList->string , type);//to be added
+            idList = idList->rsibling;
+            if(nextParam->type == TypeArray){
+                struct array_descriptor * array_desc_root = initArray(typeList->child);
+                nextParam->array = array_desc_root;
+            }
+            add_param(param_root , nextParam);                        
+        }
+        typeList = typeList->rsibling;
+        if(typeList == parameter->child)
+            break;
+        idList = typeList->child;
+        index = idList;
+        typeList = typeList->rsibling;
+    }
+    return param_root;
+}
 void semanticCheck(struct node *node) {
     printf("%d\n" , node->nodeType);
     switch(node->nodeType) {
         /*implement scope increase*/
+
+        /************Function declaration*************/
         case NODE_FUN_HEAD: { 
             struct node * function_name = nthChild(1 , node);
             struct node * parameter = nthChild(2 , node);
             struct node * typeNode = nthChild(3 , node);
             
+            /***********check function redeclaration*************/
             struct SymTableEntry * entry ;
             if((entry=findSymbol_in_global(function_name->string))!=0 && entry->type == TypeFunction)
-                printf("redeclared function %s\n" , function_name->string);
-            //printf("here\n");
+                printf("Error: duplicate declaration of function %s\n" , function_name->string);
+                
             struct function_attribute * function_attribute_root = newFunctionAttr(StdtypeCheck(typeNode));
-            //function_attribute_root->type = (enum StdType *)StdtypeCheck(typeNode);
-            //check whether it has parameter
-            if(parameter->nodeType != NODE_lambda){
-                struct param_list * param_root = newParam();
-                struct node * typeList = parameter->child;//node decls
-                struct node * idList = typeList->child;//node list
-                typeList = typeList->rsibling;
+            
 
-                strcpy(param_root->name , idList->string);
-                param_root->type = StdtypeCheck(typeList);
+            /***********check whether it has parameter**********/
+            if(parameter->nodeType != NODE_lambda)
+                function_attribute_root->param = initParam(parameter);
 
-                while(typeList != parameter->child){//to be continued
-                    enum StdType type = StdtypeCheck(typeList);
-                    do{
-                        struct param_list * nextParam = newParam();//to be added
-                        strcpy(nextParam->name , idList->string);
-                        nextParam->type = type;
-                        idList = idList->rsibling;
-                        if(nextParam->type == TypeArray){
-                            struct array_descriptor * array_desc_root = initArray(typeList->child);
-                            nextParam->array = array_desc_root;
-                        }
-                        add_param(param_root , nextParam);                        
-                    }while(idList != typeList->child);
-                    typeList = typeList->rsibling;
-                    typeList = typeList->rsibling;
-                }
-                function_attribute_root->param = param_root;
-            }
-            enum StdType valueType = TypeFunction;
-            addFunction(function_name->string , valueType , function_attribute_root);
-            SymbolTable.current_level++;            
+            /*******enter function entry into symbol table ************/
+            //entry functin_name , functiontype , function_attribtue 
+            addFunction(function_name->string , TypeFunction , function_attribute_root);
+            SymbolTable.current_level++;
+            printf("New scope created \n");                        
             break;
         }
+        /************Procedure declaration***********/
         case NODE_PRO_HEAD: { 
             struct node * procedure_name = nthChild(1 , node);
             struct node * parameter = nthChild(2 , node);
@@ -259,83 +277,60 @@ void semanticCheck(struct node *node) {
 
             struct procedure_attribute * procedure_attribute_root = newProcedureAttr();
 
-            //check whether it has parameter
-            if(parameter->nodeType != NODE_lambda){
-                struct param_list * param_root = newParam();
-                struct node * typeList = parameter->child;//node decls
-                struct node * idList = typeList->child;//node list
-                typeList = typeList->rsibling;
-
-                strcpy(param_root->name , idList->string);
-                param_root->type = StdtypeCheck(typeList);
-
-                while(typeList != parameter->child){//to be continued
-                    enum StdType type = StdtypeCheck(typeList);
-                    do{
-                        struct param_list * nextParam = newParam();//to be added
-                        strcpy(nextParam->name , idList->string);
-                        nextParam->type = type;
-                        idList = idList->rsibling;
-                        if(nextParam->type == TypeArray){
-                            struct array_descriptor * array_desc_root = initArray(typeList->child);
-                            nextParam->array = array_desc_root;
-                        }
-                        add_param(param_root , nextParam);                        
-                    }while(idList != typeList->child);
-                    typeList = typeList->rsibling;
-                    typeList = typeList->rsibling;
-                }
-                procedure_attribute_root->param = param_root;
-            }
+            //////////////  check whether it has parameter //////////////////////
+            if(parameter->nodeType != NODE_lambda)
+                procedure_attribute_root->param = initParam(parameter);
+            
             enum StdType valueType = TypeProcedure;
 
             addProcedure(procedure_name->string , valueType , procedure_attribute_root);
-            SymbolTable.current_level++;            
+            SymbolTable.current_level++;
+            printf("New scope created \n");            
             break;
         }
+        /************Close Scope********************/
         case NODE_END:{
             popSymbolTable();
             SymbolTable.current_level--;
+            printf("Scope deleted \n");                        
             return;
         }
-        case NODE_DECL: { //var declarations and should perform scope check
-            /* We only implement integer and real type here,
-               you should implement array type by yourself */               
-                if(node->child == NULL)
-                    return ;
-               else {
+        /*************** Variable declaration ***********/
+        case NODE_DECL: {
+        ///////////// empty declaration /////////////          
+            if(node->child == NULL)
+                    return;
+        ////////////declaration ////////////////    
+            else {
                 struct node * check_declaration = node->child;
                 int check_type = 2;
                 int check_node = 1;
                 do{
-                    struct node *typeNode = nthChild(check_type, node);//node type
-                    enum StdType valueType = StdtypeCheck(typeNode);
-                    
-                    ;
-                    
-                    if(valueType == TypeArray){
-                        struct node * array_node = typeNode->child;
-                        struct array_descriptor * array_desc_root = initArray(array_node);
-                        struct node *idList = nthChild(check_node, node);
-                        struct node *idNode = idList->child;
-                        do {
-                            addVariable(idNode->string, valueType , array_desc_root);
-                            idNode = idNode->rsibling;
-                        } while(idNode != idList->child);
-                        
-                    }
-                    /*********int , string , real variable declaration implement here***********/
-                    else {
-                        struct node *idList = nthChild(check_node, node);
-                        struct node *idNode = idList->child;
-                        do {
-                            addVariable(idNode->string, valueType , 0);
-                            idNode = idNode->rsibling;
-                        } while(idNode != idList->child);
-                    }
-                    check_declaration = typeNode->rsibling;
-                    check_node+=2;
-                    check_type+=2;
+                        struct node *typeNode = nthChild(check_type, node);//node type
+                        enum StdType valueType = StdtypeCheck(typeNode);
+                        /********* Array variable declaration implement here******************/
+                        if(valueType == TypeArray){
+                            struct node * array_node = typeNode->child;
+                            struct array_descriptor * array_desc_root = initArray(array_node);
+                            struct node *idList = nthChild(check_node, node);
+                            struct node *idNode = idList->child;
+                            do {
+                                addVariable(idNode->string, valueType , array_desc_root);
+                                idNode = idNode->rsibling;
+                            } while(idNode != idList->child);                          
+                        }
+                        /*********int , string , real variable declaration implement here***********/
+                        else {
+                            struct node *idList = nthChild(check_node, node);
+                            struct node *idNode = idList->child;
+                            do {
+                                addVariable(idNode->string, valueType , 0);
+                                idNode = idNode->rsibling;
+                            } while(idNode != idList->child);
+                        }
+                        check_declaration = typeNode->rsibling;
+                        check_node+=2;
+                        check_type+=2;
                 }while(check_declaration != node->child);
                 return ;
             }
@@ -365,8 +360,6 @@ void semanticCheck(struct node *node) {
             }
             return;
         }
-
-
         /* Only implemented binary op here, you should implement unary op */
         case NODE_OP:{
                     struct node * child1 = nthChild(1 , node);
@@ -386,27 +379,27 @@ void semanticCheck(struct node *node) {
         }
 
 
-        case NODE_INT:{//printf("here\n");
+        case NODE_INT:{
             node->valueType = TypeInt;
             return;
         }
-        case NODE_REAL:{//printf("here\n");
+        case NODE_REAL:{
             node->valueType = TypeReal;
             return;
         }
-        case NODE_STRING_v:{//printf("here\n");
+        case NODE_STRING_v:{
             node->valueType = TypeString;
             return;
-        }
-        /* You should check the LHS of assign stmt is assignable
-           You should also report error if LHS is a function with no parameter 
-           (function is not implemented in this sample, you should implement it) */ 
-        case NODE_ASSIGN_STMT: {//printf("here\n");
+        } 
+        case NODE_ASSIGN_STMT: {
             struct node *child1 = nthChild(1, node);
             struct node *child2 = nthChild(2, node);
             semanticCheck(child1);
             semanticCheck(child2);
 
+            //////////procedure use in the assignment ///////////
+            if(child1->valueType == TypeProcedure || child2->valueType == TypeProcedure)
+                printf("Miss use of procedure\n");
             if(child1->valueType==TypeFunction && child1->function->type == child2->valueType)
             {
                 return;
@@ -421,15 +414,10 @@ void semanticCheck(struct node *node) {
                     printf("Error: type mismatch for assignment\n");
                 exit(0);
             }
-
             node->valueType = child1->valueType;
-
             return;
         }
-
     }
-    
-
     /* Default action for other nodes not listed in the switch-case */
     struct node *child = node->child;
 

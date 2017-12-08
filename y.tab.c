@@ -2294,6 +2294,7 @@ int main(int argc, char** argv) {
 
     SymbolTable.size = 0;
     SymbolTable.current_level = 0;
+    printf("New scope created\n");
     semanticCheck(ASTRoot);
     printf("********************************\n"
            "*      No semantic error!      *\n"
