@@ -205,19 +205,19 @@ statement : variable ASSIGNMENT expression {
 	| compound_statement {
                 $$ = $1;
                          };
-	| IF expression THEN statement ELSE statement { //creat scope
+	| IF expression THEN statement ELSE statement { 
                         //semantic if here
                         $$ = newNode(NODE_IF);
                         addChild($$ , $2);
-                        addChild($$ , $3);
+                        //addChild($$ , $3);
                         addChild($$ , $4);
-                        addChild($$ , $5);
+                        //addChild($$ , $5);
                         addChild($$ , $6);
                         deleteNode($1);
                         //deleteNode($3);
                         //deleteNode($5);
                         };
-	| WHILE expression DO statement {
+	| WHILE expression DO statement { 
             $$ = newNode(NODE_WHILE);
             addChild($$ , $2);
             addChild($$ , $4);

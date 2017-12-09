@@ -5,12 +5,14 @@
 
 struct SymTable SymbolTable;
 
+//destroy useless symbol table entry 
 void popSymbolTable(){
     for(int i = 0 ; i < SymbolTable.size ; i++)
     {
         if(SymbolTable.entries[i].level == SymbolTable.current_level){
             if(SymbolTable.entries[i].type!=TypeFunction && SymbolTable.entries[i].type!=TypeProcedure){
                 //strcpy(SymbolTable.entries[i].name , NULL);
+                printf("Destroy symbol table entry name is %s type is %d \n " , SymbolTable.entries[i].name , SymbolTable.entries[i].type);
                 bzero(SymbolTable.entries[i].name ,sizeof(SymbolTable.entries[i].name));
                 SymbolTable.entries[i].level = -1;
                 SymbolTable.entries[i].array = NULL;
@@ -21,6 +23,7 @@ void popSymbolTable(){
         }
     }
 }
+// new parameter element
 struct param_list * newParam(char * s , enum StdType type){
     struct param_list * param_list = (struct param_list *)malloc(sizeof(struct param_list));
     param_list->type = type;
@@ -29,14 +32,14 @@ struct param_list * newParam(char * s , enum StdType type){
     param_list->next_param = param_list;
     return param_list;
 }
-//add parameter into parameter list
+//enter parameter into parameter list
 void add_param(struct param_list * root , struct param_list * child){
     struct param_list * point = root;
     while(point->next_param != point)
         point = point->next_param;
     point->next_param = child;
 }
-//check node type and return entry type
+//check node type and return corresponding entry type
 enum  StdType StdtypeCheck(struct node * node ){
     //printf("node type is %d\n " , node->nodeType);
     if (node->nodeType==NODE_TYPE_ARRAY)
@@ -59,6 +62,7 @@ struct array_descriptor * newArrayDes(enum StdType type){
     array_descriptor->type = type;
     array_descriptor->array_begin = 0;
     array_descriptor->array_end = 0;
+    array_descriptor->capacity = 0;
     array_descriptor->next_array = array_descriptor;
     return array_descriptor;
 }
@@ -339,8 +343,10 @@ void semanticCheck(struct node *node) {
         /* This case is simplified, actually you should check
            the symbol is a variable or a function with no parameter */
         //case NODE_VAR_OR_PROC: 
-        case NODE_SYM_REF: {
+        /********function or procedure  arguments should also be checked here*********/ 
+        case NODE_SYM_REF: { 
             struct SymTableEntry *entry = findSymbol_in_global(node->string);
+            printf("identifier is %s\n" , node->string);
             if(entry == 0) {
                 printf("current_level is %d \n" , SymbolTable.current_level);
                 printf("Error: undeclared variable %s\n", node->string);
@@ -370,15 +376,83 @@ void semanticCheck(struct node *node) {
                     }
                     else 
                         semanticCheck(child1);//unary op
+                    
+                    /////////////////left child type is TypeArray////////////
+                    if(child1->valueType == TypeArray){
+                        struct array_descriptor * array_element = child1->array;
+                        if(child1->child->child == NULL)
+                            printf("type errors in arithmetic expression\n");
+                        else{
+                            struct node * idx = child1->child->child;// "["
+                            idx = idx->rsibling;// "digseq"
+                            while(idx!=child1->child->child){
+                                if(idx->valueType != TypeInt){
+                                    printf("type in [] is not integer in this arithmetic expression\n");
+                                    exit(0);
+                                }
+                                if(idx->iValue >array_element->array_end || idx->iValue < array_element->array_begin){
+                                    printf("Point  out of range  \n");
+                                    exit(0);
+                                }
+                                idx = idx->rsibling;//"]"
+                                idx = idx->rsibling;//"[" or the first "["
+                                if(idx == child1->child->child)
+                                    break;
+                                idx = idx->rsibling;//"digseq"
+                                if(array_element == array_element->next_array){
+                                    printf("Mismatch of array type\n");
+                                    exit(0);
+                                    break;
+                                }
+                                array_element = array_element->next_array;
+                            }
+                            if(array_element->type == TypeArray){
+                                child1->array = array_element;
+                            }
+                            else {
+                                child1->valueType = array_element->type;
+                                child1->array = NULL;
+                            }
+                        }
+
+                    }
+
 
                     if(child1->valueType == child2->valueType)
                         node->valueType = child1->valueType;
                     else {
                         printf("type errors in arithmetic expression\n");
                     }
+                    return ;
         }
 
-
+        /*************** If statement check is implemented here ********************/
+        case NODE_IF:{
+            struct node * expr = nthChild(1 , node);
+            struct node * statement1 = nthChild(2 , node);
+            struct node * statement2 = nthChild(3 , node);
+            semanticCheck(expr);
+            semanticCheck(statement1);
+            semanticCheck(statement2);
+            if(expr->valueType != TypeInt){
+                printf("expression in If is not a right type\n");
+                exit(0);
+            }
+            return;
+        }
+        /*************** while statement check is implemented here *****************/
+        case NODE_WHILE:{
+            struct node * expr = nthChild(1 , node);
+            struct node * statement = nthChild(2 , node);
+            semanticCheck(expr);
+            semanticCheck(statement);
+            if(expr->valueType != TypeInt){
+                printf("expression in while is not a right type\n");
+                exit(0);
+            }
+            return;
+        }
+        /*************** digseq facto check is implemented here*********/
         case NODE_INT:{
             node->valueType = TypeInt;
             return;
@@ -400,10 +474,13 @@ void semanticCheck(struct node *node) {
             //////////procedure use in the assignment ///////////
             if(child1->valueType == TypeProcedure || child2->valueType == TypeProcedure)
                 printf("Miss use of procedure\n");
-            if(child1->valueType==TypeFunction && child1->function->type == child2->valueType)
+  
+            if(child1->valueType==TypeFunction )//&& child1->function->type == child2->valueType)
             {
+                printf("Function placed in LHS , maybe it should be placed in RHS\n");
                 return;
             }
+
 
             /* We only implement the checking for integer and real types
                you should implement the checking for array type by yourself */

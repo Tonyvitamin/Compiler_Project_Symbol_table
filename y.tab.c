@@ -1767,13 +1767,13 @@ yyreduce:
 
   case 30:
 #line 208 "0416001_parser.y"
-    { //creat scope
+    { 
                         //semantic if here
                         (yyval.node_t) = newNode(NODE_IF);
                         addChild((yyval.node_t) , (yyvsp[(2) - (6)].node_t));
-                        addChild((yyval.node_t) , (yyvsp[(3) - (6)].node_t));
+                        //addChild($$ , $3);
                         addChild((yyval.node_t) , (yyvsp[(4) - (6)].node_t));
-                        addChild((yyval.node_t) , (yyvsp[(5) - (6)].node_t));
+                        //addChild($$ , $5);
                         addChild((yyval.node_t) , (yyvsp[(6) - (6)].node_t));
                         deleteNode((yyvsp[(1) - (6)].node_t));
                         //deleteNode($3);
@@ -1783,7 +1783,7 @@ yyreduce:
 
   case 31:
 #line 220 "0416001_parser.y"
-    {
+    { 
             (yyval.node_t) = newNode(NODE_WHILE);
             addChild((yyval.node_t) , (yyvsp[(2) - (4)].node_t));
             addChild((yyval.node_t) , (yyvsp[(4) - (4)].node_t));
