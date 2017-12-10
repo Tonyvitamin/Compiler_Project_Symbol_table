@@ -50,10 +50,6 @@ enum  StdType StdtypeCheck(struct node * node ){
         return TypeReal;
     else if (node->nodeType==NODE_TYPE_STRING)
         return TypeString;
-    else if (node->nodeType==NODE_TYPE_FUNCTION)
-        return TypeFunction;
-    else if(node->nodeType==NODE_TYPE_PROCEDURE)
-        return TypeProcedure;
     else return TypeNULL;
 }
 //new array descriptor
@@ -164,10 +160,11 @@ struct SymTableEntry* addVariable(char *s, enum StdType type , struct array_desc
 }
 //////////////////// enter function into a symbol table ///////////////
 struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_attribute * function) {
-    if(findSymbol_in_global(s) != 0) { 
+    /*if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of function %s\n", s);
-        exit(0);
-    }
+        return 0;
+        //exit(0);
+    }*/
 
     int index = SymbolTable.size;
     SymbolTable.size++;
@@ -184,7 +181,8 @@ struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_a
 struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure_attribute * procedure) {
     if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of procedure %s\n", s);
-        exit(0);
+        return 0;
+        //exit(0);
     }
 
     int index = SymbolTable.size;
@@ -240,7 +238,7 @@ struct param_list * initParam(struct node * parameter ){
     return param_root;
 }
 void semanticCheck(struct node *node) {
-    printf("%d\n" , node->nodeType);
+    printf("current node type is %d\n" , node->nodeType);
     switch(node->nodeType) {
         /*implement scope increase*/
 
@@ -251,8 +249,8 @@ void semanticCheck(struct node *node) {
             struct node * typeNode = nthChild(3 , node);
             
             /***********check function redeclaration*************/
-            struct SymTableEntry * entry ;
-            if((entry=findSymbol_in_global(function_name->string))!=0 && entry->type == TypeFunction)
+            struct SymTableEntry * entry = findSymbol_in_global(function_name->string);
+            if(entry!=0 && entry->type == TypeFunction)
                 printf("Error: duplicate declaration of function %s\n" , function_name->string);
                 
             struct function_attribute * function_attribute_root = newFunctionAttr(StdtypeCheck(typeNode));
@@ -276,7 +274,7 @@ void semanticCheck(struct node *node) {
 
             /* check procedure of redeclared problem*/
             struct SymTableEntry * entry ;
-            if((entry=findSymbol_in_global(procedure_name->string))!=0 && entry->type == TypeProcedure)
+            if( (entry=findSymbol_in_global(procedure_name->string)) != 0 && entry->type == TypeProcedure)
                 printf("redeclared procedure %s\n" , procedure_name->string);
 
             struct procedure_attribute * procedure_attribute_root = newProcedureAttr();
@@ -285,9 +283,8 @@ void semanticCheck(struct node *node) {
             if(parameter->nodeType != NODE_lambda)
                 procedure_attribute_root->param = initParam(parameter);
             
-            enum StdType valueType = TypeProcedure;
 
-            addProcedure(procedure_name->string , valueType , procedure_attribute_root);
+            addProcedure(procedure_name->string , TypeProcedure , procedure_attribute_root);
             SymbolTable.current_level++;
             printf("New scope created \n");            
             break;
@@ -348,21 +345,200 @@ void semanticCheck(struct node *node) {
             struct SymTableEntry *entry = findSymbol_in_global(node->string);
             printf("identifier is %s\n" , node->string);
             if(entry == 0) {
-                printf("current_level is %d \n" , SymbolTable.current_level);
-                printf("Error: undeclared variable %s\n", node->string);
-                exit(0);
+                printf("Error: undeclared variable %s and current_level is %d \n", node->string , SymbolTable.current_level);
+                //exit(0);
             }
 
             node->entry = entry;
             node->valueType = entry->type;
+            ////////////////// symbol table entry is procedure /////////////////////////////
             if(entry->type == TypeProcedure) {
                 node->procedure = entry->procedure;
+                //procedure -> identifier
+                if(node->child == NULL){
+                    if(entry->procedure->param == NULL)
+                        return;
+                    else {
+                        printf("Error: wrong number of argument\n");
+                        return;
+                    }
+
+                }
+                else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
+                    printf("Error: mismatch of procedure %s\n" , node->string);
+                    return;
+                }
+                else {
+                    struct node * argument = node->child->child; // first argument
+                    if(entry->procedure->param == NULL){
+                        printf("Error: wrong number of argument\n");
+                        return;
+                    }
+                    struct param_list * first_param = entry->procedure->param;
+                    int argumentNum = 1;
+                    while(first_param != first_param->next_param){
+                        argument++;
+                        first_param = first_param->next_param;
+                    }
+                    struct node * expr = node->child->child;
+                    for(int idx = 0 ; idx < argumentNum ; idx++){
+                        semanticCheck(expr);
+                        struct param_list * checkParam =entry->procedure->param;
+                        for(int j = idx+1 ; j < argumentNum ; j++){
+                            checkParam = checkParam->next_param;
+                        }
+                        if(expr->valueType != TypeArray && checkParam->type != TypeArray){
+                            if(expr->valueType != checkParam->type){
+                                printf("Error: wrong type of argument\n");
+                                return;
+                            }
+                        }
+                        if(expr->valueType == checkParam->type){
+                            if(expr->valueType == TypeArray){
+                                struct array_descriptor * expr_array = expr->array;
+                                struct array_descriptor * entry_array = checkParam->array;
+                                while(entry_array->next_array != entry_array){
+                                    if(expr_array->array_begin != entry_array->array_begin || expr_array->array_end != entry_array->array_end){
+                                        printf("Error: out range\n");
+                                        return;
+                                    }
+                                    if(expr_array->type != entry_array->type){
+                                        printf("Error: array type mismatch\n");
+                                    }
+                                    expr_array = expr_array->next_array;
+                                    entry_array = entry_array->next_array;
+                                }
+                            }
+                        }
+                        //to be continued 
+                        expr = expr->rsibling;
+                    }
+                }
             }
             else if (entry->type == TypeFunction) {
                 node->function = entry->function;
+                node->valueType = entry->function->type;
+                //procedure -> identifier
+                if(node->child == NULL){
+                    if(entry->function->param == NULL)
+                        return;
+                    else {
+                        printf("Error: wrong number of argument\n");
+                        return;
+                    }
+
+                }
+                else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
+                    printf("Error: mismatch of procedure %s\n" , node->string);
+                    return;
+                }
+                else {
+                    struct node * argument = node->child->child; // first argument
+                    if(entry->function->param == NULL){
+                        printf("Error: wrong number of argument\n");
+                        return;
+                    }
+                    struct param_list * first_param = entry->function->param;
+                    int argumentNum = 1;
+                    while(first_param != first_param->next_param){
+                        argument++;
+                        first_param = first_param->next_param;
+                    }
+                    struct node * expr = node->child->child;
+                    for(int idx = 0 ; idx < argumentNum ; idx++){
+                        semanticCheck(expr);
+                        struct param_list * checkParam =entry->function->param;
+                        for(int j = idx+1 ; j < argumentNum ; j++){
+                            checkParam = checkParam->next_param;
+                        }
+                        if(expr->valueType != TypeArray && checkParam->type != TypeArray){
+                            if(expr->valueType != checkParam->type){
+                                printf("Error: wrong type of argument\n");
+                                return;
+                            }
+                        }
+                        if(expr->valueType == checkParam->type){
+                            if(expr->valueType == TypeArray){
+                                struct array_descriptor * expr_array = expr->array;
+                                struct array_descriptor * entry_array = checkParam->array;
+                                while(entry_array->next_array != entry_array){
+                                    if(expr_array->array_begin != entry_array->array_begin || expr_array->array_end != entry_array->array_end){
+                                        printf("Error: out range\n");
+                                        return;
+                                    }
+                                    if(expr_array->type != entry_array->type){
+                                        printf("Error: array type mismatch\n");
+                                    }
+                                    expr_array = expr_array->next_array;
+                                    entry_array = entry_array->next_array;
+                                }
+                            }
+                        }
+                        //to be continued 
+                        expr = expr->rsibling;
+                    }
+                }
             }
+            /*************** symbol talbe entry is array **********************/
             else if(entry->type == TypeArray) {
                 node->array = entry->array;
+                if(node->child == NULL){
+                    printf("warning: meanless use of array %s\n" , node->string);
+                    return;
+                }
+                else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
+                    struct node * idx = node->child;
+                    if(idx->child == NULL)
+                        return;
+                    else {
+                        struct array_descriptor * array_argument = node->array;
+                        int argumentNum = 1;
+                        while(array_argument!=array_argument->next_array){
+                            argumentNum++;
+                            array_argument = array_argument->next_array;
+                        }
+                        idx = idx->child; //"["
+                        semanticCheck(idx->rsibling);
+                        if(idx->rsibling->valueType != TypeInt){
+                            printf("Error: the argument is not integer\n");
+                            return;
+                        }
+                        int num =0;
+                        idx = idx->rsibling; //"num"
+                        while(idx != node->child->child){
+                            array_argument = node->array;
+                            for(int i = 1 ; i < argumentNum ; i++){
+                                array_argument = array_argument->next_array;
+                            }
+                            if(idx->iValue > array_argument->array_begin || idx->iValue < array_argument->array_end){
+                                printf("Error: out of range\n");
+                                return;
+                            }
+                            idx = idx->rsibling; //"]"
+                            if(idx->rsibling == node->child->child)// no more [ num ]
+                                break;
+
+                            if(argumentNum == 0){ // too many 
+                                printf("Error: wrong dimension \n");
+                                return;
+                            }
+                            num++;
+                            argumentNum--;
+                            idx = idx->rsibling; //"["
+                        }
+                        node->array = array_argument;   
+                    }
+                }
+                else 
+                    return;
+
+            }
+            /*************** symbol table entry is variable *****************/ 
+            else {
+                if(node->child!=NULL&&node->child->nodeType==TOKEN_LBRAC){
+                    printf("Error: wrong use of variabe %s \n" , node->string);
+                    return;
+                }
             }
             return;
         }
@@ -373,55 +549,213 @@ void semanticCheck(struct node *node) {
                     if(child1 != child2){//binary op 
                         semanticCheck(child1);
                         semanticCheck(child2);
-                    }
-                    else 
-                        semanticCheck(child1);//unary op
-                    
-                    /////////////////left child type is TypeArray////////////
-                    if(child1->valueType == TypeArray){
-                        struct array_descriptor * array_element = child1->array;
-                        if(child1->child->child == NULL)
-                            printf("type errors in arithmetic expression\n");
-                        else{
-                            struct node * idx = child1->child->child;// "["
-                            idx = idx->rsibling;// "digseq"
-                            while(idx!=child1->child->child){
-                                if(idx->valueType != TypeInt){
-                                    printf("type in [] is not integer in this arithmetic expression\n");
-                                    exit(0);
+                        if(child1->valueType == child2->valueType && child1->valueType != TypeProcedure && child2->valueType != TypeProcedure){
+                            node->valueType = child1->valueType;
+                            switch(node->op){
+                                case OP_ADD: {
+                                        if(child1->valueType == TypeInt){
+                                            node->iValue = child1->iValue + child2->iValue;
+                                            return;
+                                        }
+                                        else if(child1->valueType == TypeReal){
+                                            node->rValue = child1->rValue + child2->rValue; 
+                                            return;
+                                        }
+                                        else if(child1->valueType == TypeString){
+                                            printf("Error: wrong type \n");
+                                        }
+                                        else {//type array
+    
+                                        }
                                 }
-                                if(idx->iValue >array_element->array_end || idx->iValue < array_element->array_begin){
-                                    printf("Point  out of range  \n");
-                                    exit(0);
+                                case OP_SUB: {
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue - child2->iValue;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->rValue = child1->rValue - child2->rValue; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+    
+                                    }
                                 }
-                                idx = idx->rsibling;//"]"
-                                idx = idx->rsibling;//"[" or the first "["
-                                if(idx == child1->child->child)
-                                    break;
-                                idx = idx->rsibling;//"digseq"
-                                if(array_element == array_element->next_array){
-                                    printf("Mismatch of array type\n");
-                                    exit(0);
-                                    break;
+                                case OP_MUL:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue * child2->iValue;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->rValue = child1->rValue * child2->rValue; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+    
+                                    }
                                 }
-                                array_element = array_element->next_array;
-                            }
-                            if(array_element->type == TypeArray){
-                                child1->array = array_element;
-                            }
-                            else {
-                                child1->valueType = array_element->type;
-                                child1->array = NULL;
+                                case OP_DIV:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue / child2->iValue;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->rValue = child1->rValue / child2->rValue; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+                                        printf("Error: wrong type in arithmetic operation\n");
+                                        return; 
+                                    }
+                                }
+                                case OP_LT: {
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue < child2->iValue?1:0;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = child1->rValue < child2->rValue?1:0; 
+                                        node->valueType = TypeInt;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                case OP_GT:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue > child2->iValue?1:0;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = child1->rValue > child2->rValue?1:0;
+                                        node->valueType = TypeInt; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                case OP_EQ:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue == child2->iValue?1:0;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = child1->rValue == child2->rValue?1:0;
+                                        node->valueType = TypeInt; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                        return;
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                case OP_NE:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = (child1->iValue != child2->iValue )?1:0;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = (child1->rValue != child2->rValue)?1:0; 
+                                        node->valueType = TypeInt;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                case OP_GE:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = (child1->iValue >= child2->iValue)?1:0 ;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = (child1->rValue >= child2->rValue)?1:0 ;
+                                        node->valueType = TypeInt; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                case OP_LE:{
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = (child1->iValue <= child2->iValue)?1:0;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->iValue = (child1->rValue <= child2->rValue)?1:0;
+                                        node->valueType = TypeInt; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                    }
+                                    else {//type array
+    
+                                    }
+                                }
+                                /*NOT factor
+                                case OP_NOT:{
+    
+                                }*/
                             }
                         }
-
+                        else {
+                            printf("type errors in arithmetic expression\n");
+                        }
                     }
-
-
-                    if(child1->valueType == child2->valueType)
+                    else {                        
+                        semanticCheck(child1);//unary op
                         node->valueType = child1->valueType;
-                    else {
-                        printf("type errors in arithmetic expression\n");
+                        switch(node->op){
+                            case OP_ADD: {
+                                    if(child1->valueType == TypeInt){
+                                        node->iValue = child1->iValue;
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeReal){
+                                        node->rValue = child1->rValue; 
+                                        return;
+                                    }
+                                    else if(child1->valueType == TypeString){
+                                        printf("Error: wrong type \n");
+                                    }
+                                    else {//type array
+
+                                    }
+                            }
+                        }
                     }
                     return ;
         }
@@ -452,15 +786,17 @@ void semanticCheck(struct node *node) {
             }
             return;
         }
-        /*************** digseq facto check is implemented here*********/
+        /*************** digseq factor check is implemented here*********/
         case NODE_INT:{
             node->valueType = TypeInt;
             return;
         }
+        /*************** realnumber factor check is implemented here*********/
         case NODE_REAL:{
             node->valueType = TypeReal;
             return;
         }
+        /*************** string factor check is implemented here********/
         case NODE_STRING_v:{
             node->valueType = TypeString;
             return;
@@ -472,15 +808,18 @@ void semanticCheck(struct node *node) {
             semanticCheck(child2);
 
             //////////procedure use in the assignment ///////////
-            if(child1->valueType == TypeProcedure || child2->valueType == TypeProcedure)
+            if(child1->valueType == TypeProcedure || child2->valueType == TypeProcedure){
                 printf("Miss use of procedure\n");
+                //exit(0);
+            }
   
             if(child1->valueType==TypeFunction )//&& child1->function->type == child2->valueType)
             {
                 printf("Function placed in LHS , maybe it should be placed in RHS\n");
+                //exit(0);
                 return;
             }
-
+            switch
 
             /* We only implement the checking for integer and real types
                you should implement the checking for array type by yourself */

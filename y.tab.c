@@ -527,11 +527,11 @@ static const yytype_uint16 yyrline[] =
 {
        0,    48,    48,    66,    69,    74,    81,    85,    88,   100,
      103,   106,   112,   117,   121,   129,   137,   144,   148,   152,
-     157,   165,   169,   172,   184,   188,   191,   196,   202,   205,
-     208,   220,   226,   229,   234,   243,   246,   251,   259,   263,
-     268,   271,   277,   280,   286,   289,   295,   300,   307,   311,
-     315,   319,   323,   327,   330,   334,   337,   342,   345,   349,
-     352,   355,   358,   361,   364,   368
+     157,   165,   169,   172,   184,   188,   191,   196,   201,   204,
+     207,   217,   223,   226,   232,   241,   244,   248,   255,   259,
+     264,   267,   273,   276,   282,   285,   291,   296,   302,   306,
+     310,   314,   318,   322,   325,   329,   332,   337,   340,   344,
+     347,   350,   353,   356,   359,   363
 };
 #endif
 
@@ -1747,33 +1747,30 @@ yyreduce:
                 (yyval.node_t) = newNode(NODE_ASSIGN_STMT);
                 addChild((yyval.node_t) , (yyvsp[(1) - (3)].node_t));
                 addChild((yyval.node_t) , (yyvsp[(3) - (3)].node_t));
-                (yyvsp[(1) - (3)].node_t)->nodeType = NODE_SYM_REF; //check declaration
                 deleteNode((yyvsp[(2) - (3)].node_t));}
     break;
 
   case 28:
-#line 202 "0416001_parser.y"
+#line 201 "0416001_parser.y"
     {
                 (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
                           }
     break;
 
   case 29:
-#line 205 "0416001_parser.y"
+#line 204 "0416001_parser.y"
     {
                 (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
                          }
     break;
 
   case 30:
-#line 208 "0416001_parser.y"
+#line 207 "0416001_parser.y"
     { 
                         //semantic if here
                         (yyval.node_t) = newNode(NODE_IF);
                         addChild((yyval.node_t) , (yyvsp[(2) - (6)].node_t));
-                        //addChild($$ , $3);
                         addChild((yyval.node_t) , (yyvsp[(4) - (6)].node_t));
-                        //addChild($$ , $5);
                         addChild((yyval.node_t) , (yyvsp[(6) - (6)].node_t));
                         deleteNode((yyvsp[(1) - (6)].node_t));
                         //deleteNode($3);
@@ -1782,7 +1779,7 @@ yyreduce:
     break;
 
   case 31:
-#line 220 "0416001_parser.y"
+#line 217 "0416001_parser.y"
     { 
             (yyval.node_t) = newNode(NODE_WHILE);
             addChild((yyval.node_t) , (yyvsp[(2) - (4)].node_t));
@@ -1792,57 +1789,56 @@ yyreduce:
     break;
 
   case 32:
-#line 226 "0416001_parser.y"
+#line 223 "0416001_parser.y"
     {(yyval.node_t) = newNode(NODE_LIST);}
     break;
 
   case 33:
-#line 229 "0416001_parser.y"
+#line 226 "0416001_parser.y"
     {
                 (yyval.node_t) = newNode(NODE_SYM_REF);
                 (yyval.node_t)->string =  (yyvsp[(1) - (2)].node_t)->string;
-                addChild((yyval.node_t) , (yyvsp[(2) - (2)].node_t));}
+                addChild((yyval.node_t) , (yyvsp[(2) - (2)].node_t));
+                }
     break;
 
   case 34:
-#line 234 "0416001_parser.y"
+#line 232 "0416001_parser.y"
     { 
                     (yyval.node_t) = (yyvsp[(4) - (4)].node_t);
-                    addChild((yyval.node_t) , newOpNode(OP_LBRAC));
+                    addChild((yyval.node_t) , newNode(TOKEN_LBRAC));
                     addChild((yyval.node_t) , (yyvsp[(2) - (4)].node_t));
-                    addChild((yyval.node_t) , newOpNode(OP_RBRAC));
+                    addChild((yyval.node_t) , newNode(TOKEN_RBRAC));
                     deleteNode((yyvsp[(1) - (4)].node_t));
                     deleteNode((yyvsp[(3) - (4)].node_t));
                     }
     break;
 
   case 35:
-#line 243 "0416001_parser.y"
+#line 241 "0416001_parser.y"
     {(yyval.node_t) = newNode(NODE_LIST);}
     break;
 
   case 36:
-#line 246 "0416001_parser.y"
+#line 244 "0416001_parser.y"
     {
                             (yyval.node_t) = newNode(NODE_SYM_REF);//without parameter
                             (yyval.node_t)->string = (yyvsp[(1) - (1)].node_t)->string;
-                            deleteNode((yyvsp[(1) - (1)].node_t));
                                  }
     break;
 
   case 37:
-#line 251 "0416001_parser.y"
+#line 248 "0416001_parser.y"
     {
                 (yyval.node_t) = newNode(NODE_SYM_REF);
                 (yyval.node_t)->string = (yyvsp[(1) - (4)].node_t)->string;
-                deleteNode((yyvsp[(1) - (4)].node_t));
                 addChild((yyval.node_t) , (yyvsp[(3) - (4)].node_t));
                 deleteNode((yyvsp[(2) - (4)].node_t));
                 deleteNode((yyvsp[(4) - (4)].node_t));}
     break;
 
   case 38:
-#line 259 "0416001_parser.y"
+#line 255 "0416001_parser.y"
     {
                     (yyval.node_t) = newNode(NODE_LIST);
                     addChild((yyval.node_t) , (yyvsp[(1) - (1)].node_t));
@@ -1850,7 +1846,7 @@ yyreduce:
     break;
 
   case 39:
-#line 263 "0416001_parser.y"
+#line 259 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(1) - (3)].node_t);
             addChild((yyval.node_t) , (yyvsp[(3) - (3)].node_t));
@@ -1858,14 +1854,14 @@ yyreduce:
     break;
 
   case 40:
-#line 268 "0416001_parser.y"
+#line 264 "0416001_parser.y"
     {
                         (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
                                }
     break;
 
   case 41:
-#line 271 "0416001_parser.y"
+#line 267 "0416001_parser.y"
     {
                 (yyval.node_t) = (yyvsp[(2) - (3)].node_t);
                 addChild((yyval.node_t) , (yyvsp[(1) - (3)].node_t));
@@ -1873,14 +1869,14 @@ yyreduce:
     break;
 
   case 42:
-#line 277 "0416001_parser.y"
+#line 273 "0416001_parser.y"
     {
                         (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
                          }
     break;
 
   case 43:
-#line 280 "0416001_parser.y"
+#line 276 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(2) - (3)].node_t);
             addChild((yyval.node_t) , (yyvsp[(1) - (3)].node_t));
@@ -1888,14 +1884,14 @@ yyreduce:
     break;
 
   case 44:
-#line 286 "0416001_parser.y"
+#line 282 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
               }
     break;
 
   case 45:
-#line 289 "0416001_parser.y"
+#line 285 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(2) - (3)].node_t);
             addChild((yyval.node_t) , (yyvsp[(1) - (3)].node_t));
@@ -1903,7 +1899,7 @@ yyreduce:
     break;
 
   case 46:
-#line 295 "0416001_parser.y"
+#line 291 "0416001_parser.y"
     { //call declared variable , function , procedure 
             (yyval.node_t) = newNode(NODE_SYM_REF);
             (yyval.node_t)->string = (yyvsp[(1) - (2)].node_t)->string;
@@ -1912,18 +1908,17 @@ yyreduce:
     break;
 
   case 47:
-#line 300 "0416001_parser.y"
+#line 296 "0416001_parser.y"
     {
             (yyval.node_t) = newNode(NODE_SYM_REF);
             (yyval.node_t)->string = (yyvsp[(1) - (4)].node_t)->string;
-            deleteNode((yyvsp[(1) - (4)].node_t));
             addChild((yyval.node_t) , (yyvsp[(3) - (4)].node_t));
             deleteNode((yyvsp[(2) - (4)].node_t));
             deleteNode((yyvsp[(4) - (4)].node_t));}
     break;
 
   case 48:
-#line 307 "0416001_parser.y"
+#line 302 "0416001_parser.y"
     {
         (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
         (yyval.node_t)->nodeType = NODE_INT;
@@ -1931,7 +1926,7 @@ yyreduce:
     break;
 
   case 49:
-#line 311 "0416001_parser.y"
+#line 306 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(1) - (2)].node_t);
             addChild((yyval.node_t) , (yyvsp[(2) - (2)].node_t));         
@@ -1939,7 +1934,7 @@ yyreduce:
     break;
 
   case 50:
-#line 315 "0416001_parser.y"
+#line 310 "0416001_parser.y"
     {
         (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
         (yyval.node_t)->nodeType = NODE_REAL;
@@ -1947,7 +1942,7 @@ yyreduce:
     break;
 
   case 51:
-#line 319 "0416001_parser.y"
+#line 314 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(1) - (2)].node_t);
             addChild((yyval.node_t) , (yyvsp[(2) - (2)].node_t));
@@ -1955,7 +1950,7 @@ yyreduce:
     break;
 
   case 52:
-#line 323 "0416001_parser.y"
+#line 318 "0416001_parser.y"
     {
                 (yyval.node_t) = (yyvsp[(2) - (3)].node_t);
                 deleteNode((yyvsp[(1) - (3)].node_t));
@@ -1963,84 +1958,84 @@ yyreduce:
     break;
 
   case 53:
-#line 327 "0416001_parser.y"
+#line 322 "0416001_parser.y"
     {
                     (yyval.node_t) = (yyvsp[(2) - (2)].node_t);
                     addChild((yyval.node_t) , (yyvsp[(1) - (2)].node_t));}
     break;
 
   case 54:
-#line 330 "0416001_parser.y"
+#line 325 "0416001_parser.y"
     {
             (yyval.node_t) = (yyvsp[(1) - (1)].node_t);
             (yyval.node_t)->nodeType = NODE_STRING_v;}
     break;
 
   case 55:
-#line 334 "0416001_parser.y"
+#line 329 "0416001_parser.y"
     {
                 (yyval.node_t) = newOpNode(OP_ADD);
                 deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 56:
-#line 337 "0416001_parser.y"
+#line 332 "0416001_parser.y"
     {
                 (yyval.node_t) = newOpNode(OP_SUB);
                 deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 57:
-#line 342 "0416001_parser.y"
+#line 337 "0416001_parser.y"
     {
                 (yyval.node_t) = newOpNode(OP_MUL);
                 deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 58:
-#line 345 "0416001_parser.y"
+#line 340 "0416001_parser.y"
     {
                 (yyval.node_t) = newOpNode(OP_DIV);
                 deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 59:
-#line 349 "0416001_parser.y"
+#line 344 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_LT);
             deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 60:
-#line 352 "0416001_parser.y"
+#line 347 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_GT);
             deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 61:
-#line 355 "0416001_parser.y"
+#line 350 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_EQ);
             deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 62:
-#line 358 "0416001_parser.y"
+#line 353 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_LE);
             deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 63:
-#line 361 "0416001_parser.y"
+#line 356 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_GE);
             deleteNode((yyvsp[(1) - (1)].node_t));}
     break;
 
   case 64:
-#line 364 "0416001_parser.y"
+#line 359 "0416001_parser.y"
     {
             (yyval.node_t) = newOpNode(OP_NE);
             deleteNode((yyvsp[(1) - (1)].node_t));}
@@ -2048,7 +2043,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2052 "y.tab.c"
+#line 2047 "y.tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2262,7 +2257,7 @@ yyreturn:
 }
 
 
-#line 370 "0416001_parser.y"
+#line 365 "0416001_parser.y"
 
 
 struct node * newOpNode(int op) {

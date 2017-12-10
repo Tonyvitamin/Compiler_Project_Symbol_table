@@ -88,14 +88,14 @@ void printTree(struct node *node, int ident) {
                 case OP_NE:
                     printf("%s!=\n", blank);
                     break;
-                case OP_LBRAC:
-                    printf("%s[\n", blank);
-                    break;
-                case OP_RBRAC:
-                    printf("%s]\n", blank);
-                    break;
             }
             ident++;
+            break;
+        case TOKEN_LBRAC:
+            printf("%s[\n", blank);
+            break;
+        case TOKEN_RBRAC:
+            printf("%s]\n", blank);
             break;
         case NODE_INT:
             printf("%s%d\n", blank, node->iValue);

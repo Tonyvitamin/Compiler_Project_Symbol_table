@@ -197,7 +197,6 @@ statement : variable ASSIGNMENT expression {
                 $$ = newNode(NODE_ASSIGN_STMT);
                 addChild($$ , $1);
                 addChild($$ , $3);
-                $1->nodeType = NODE_SYM_REF; //check declaration
                 deleteNode($2);};
 	| procedure_statement {
                 $$ = $1;
@@ -209,9 +208,7 @@ statement : variable ASSIGNMENT expression {
                         //semantic if here
                         $$ = newNode(NODE_IF);
                         addChild($$ , $2);
-                        //addChild($$ , $3);
                         addChild($$ , $4);
-                        //addChild($$ , $5);
                         addChild($$ , $6);
                         deleteNode($1);
                         //deleteNode($3);
@@ -229,13 +226,14 @@ statement : variable ASSIGNMENT expression {
 variable : IDENTIFIER tail {
                 $$ = newNode(NODE_SYM_REF);
                 $$->string =  $1->string;
-                addChild($$ , $2);};
+                addChild($$ , $2);
+                };
 
 tail     : LBRAC expression RBRAC tail { 
                     $$ = $4;
-                    addChild($$ , newOpNode(OP_LBRAC));
+                    addChild($$ , newNode(TOKEN_LBRAC));
                     addChild($$ , $2);
-                    addChild($$ , newOpNode(OP_RBRAC));
+                    addChild($$ , newNode(TOKEN_RBRAC));
                     deleteNode($1);
                     deleteNode($3);
                     };
@@ -246,12 +244,10 @@ tail     : LBRAC expression RBRAC tail {
 procedure_statement : IDENTIFIER {
                             $$ = newNode(NODE_SYM_REF);//without parameter
                             $$->string = $1->string;
-                            deleteNode($1);
                                  };
 	| IDENTIFIER LPAREN expression_list RPAREN {
                 $$ = newNode(NODE_SYM_REF);
                 $$->string = $1->string;
-                deleteNode($1);
                 addChild($$ , $3);
                 deleteNode($2);
                 deleteNode($4);};
@@ -300,7 +296,6 @@ factor : IDENTIFIER tail { //call declared variable , function , procedure
 	| IDENTIFIER LPAREN expression_list RPAREN {
             $$ = newNode(NODE_SYM_REF);
             $$->string = $1->string;
-            deleteNode($1);
             addChild($$ , $3);
             deleteNode($2);
             deleteNode($4);};

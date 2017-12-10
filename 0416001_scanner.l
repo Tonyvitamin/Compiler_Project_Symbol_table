@@ -333,7 +333,7 @@ NQUOTE [^']
 }
 
 
-"//".* {fprintf(stderr , "comment is %s\n" , yytext);}
+"//".* {}
 
 
 %%

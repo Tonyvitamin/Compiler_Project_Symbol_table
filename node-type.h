@@ -24,19 +24,22 @@ struct node;
 #define NODE_TYPE_REAL      10
 #define NODE_TYPE_STRING    11
 #define NODE_TYPE_ARRAY     12
-#define NODE_TYPE_FUNCTION  13
-#define NODE_TYPE_PROCEDURE 14
+//#define NODE_TYPE_FUNCTION  13
+//#define NODE_TYPE_PROCEDURE 14
 
+//array element 
+#define TOKEN_LBRAC         15
+#define TOKEN_RBRAC         16
 
-#define NODE_ASSIGN_STMT    15
-#define NODE_SYM_REF        16
+#define NODE_ASSIGN_STMT    17
+#define NODE_SYM_REF        18
 
-#define NODE_VARIABLE       17
-#define NODE_lambda         18
+#define NODE_VARIABLE       19
+#define NODE_lambda         20
 
 //subprogram_declarations
-#define NODE_FUN_HEAD       19
-#define NODE_PRO_HEAD       20
+#define NODE_FUN_HEAD       21
+#define NODE_PRO_HEAD       22
 
 #define NODE_LIST           50
 #define NODE_OPT_VAR        51
@@ -65,8 +68,7 @@ struct node;
 #define OP_LE   9
 #define OP_NE   10
 #define OP_NOT  11
-#define OP_LBRAC 12
-#define OP_RBRAC 13
+
 
 
   

@@ -33,6 +33,9 @@ struct array_descriptor{
     int array_begin;
     int array_end;
     int capacity;
+    int iValue;
+    double rValue;
+    char * string;
     struct array_descriptor * next_array;
 };
 
@@ -46,6 +49,9 @@ struct procedure_attribute{
 
 struct SymTableEntry {
     char name[100];
+    int iValue;
+    char * string;
+    double rValue;
     int level;
     enum StdType type;
     struct procedure_attribute * procedure;

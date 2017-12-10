@@ -6,7 +6,7 @@ PROGRAM foo(input, output, error) ;
    function  sum(a, b: integer) : integer;
       begin
          if a <= 0 then sum := 0
-         else sum := a + sum(a - 1, 0)  // correct
+         else sum := a + sum(a-1, 0)  // correct
          // sum is the return value
       end;
    

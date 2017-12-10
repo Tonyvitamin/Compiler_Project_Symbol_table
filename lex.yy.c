@@ -1285,7 +1285,7 @@ YY_RULE_SETUP
 case 53:
 YY_RULE_SETUP
 #line 336 "0416001_scanner.l"
-{fprintf(stderr , "comment is %s\n" , yytext);}
+{}
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
