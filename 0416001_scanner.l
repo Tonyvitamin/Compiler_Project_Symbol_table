@@ -51,7 +51,7 @@
 */
 int lineCount = 1;
 extern YYSTYPE yylval;
-struct node* newTokenNode(int tokenType);
+struct node* newTokenNode(int tokenType , int lineCount);
 
 %}
 
@@ -87,199 +87,200 @@ NQUOTE [^']
 
 
 {A}{R}{R}{A}{Y}     {
-            yylval.node_t = newTokenNode(ARRAY); 
+            yylval.node_t = newTokenNode(ARRAY,lineCount); 
             return(ARRAY);
 }
 {D}{O}       {
-          yylval.node_t = newTokenNode(DO); 
+          yylval.node_t = newTokenNode(DO,lineCount); 
           return(DO);
 }
 {E}{L}{S}{E}    {
-          yylval.node_t = newTokenNode(ELSE); 
+          yylval.node_t = newTokenNode(ELSE,lineCount); 
           return(ELSE);
 }
 {E}{N}{D}      {
-          yylval.node_t = newTokenNode(END); 
+          yylval.node_t = newTokenNode(END,lineCount); 
           return(END);
 }
 {F}{U}{N}{C}{T}{I}{O}{N}     {
-                    yylval.node_t = newTokenNode(FUNCTION); 
+                    yylval.node_t = newTokenNode(FUNCTION,lineCount); 
                     return(FUNCTION);
 }
 {I}{F}     {
-        yylval.node_t = newTokenNode(IF); 
+        yylval.node_t = newTokenNode(IF,lineCount); 
         return(IF);
 }
 {N}{O}{T}        {
-            yylval.node_t = newTokenNode(NOT); 
+            yylval.node_t = newTokenNode(NOT,lineCount); 
             return(NOT);
 }
 {O}{F}        {
-          yylval.node_t = newTokenNode(OF);  
+          yylval.node_t = newTokenNode(OF,lineCount);  
           return(OF); 
 }
 {P}{R}{O}{C}{E}{D}{U}{R}{E}  {
-            yylval.node_t = newTokenNode(PROCEDURE); 
+            yylval.node_t = newTokenNode(PROCEDURE,lineCount); 
             return(PROCEDURE);
 }
 {P}{R}{O}{G}{R}{A}{M}        {
-            yylval.node_t = newTokenNode(PROGRAM); 
+            yylval.node_t = newTokenNode(PROGRAM,lineCount); 
             return(PROGRAM);
 }
 {T}{H}{E}{N}       {
-            yylval.node_t = newTokenNode(THEN); 
+            yylval.node_t = newTokenNode(THEN,lineCount); 
             return(THEN);
 }
 {V}{A}{R}          {
-            yylval.node_t = newTokenNode(VAR); 
+            yylval.node_t = newTokenNode(VAR,lineCount); 
             return(VAR);
 }
 {W}{H}{I}{L}{E}    {
-            yylval.node_t = newTokenNode(WHILE); 
+            yylval.node_t = newTokenNode(WHILE,lineCount); 
             return(WHILE);
 }
 {R}{E}{A}{L}         {
-            yylval.node_t = newTokenNode(real); 
+            yylval.node_t = newTokenNode(real,lineCount); 
             return(real);
 }
 {I}{N}{T}{E}{G}{E}{R}        {
-                               yylval.node_t = newTokenNode(INTEGER); 
+                               yylval.node_t = newTokenNode(INTEGER,lineCount); 
                                return(INTEGER);
 }
 {B}{E}{G}{I}{N}    {
-            yylval.node_t = newTokenNode(begin);
+            yylval.node_t = newTokenNode(begin,lineCount);
             return(begin);
 }
 {S}{T}{R}{I}{N}{G}           {
-                          yylval.node_t = newTokenNode(STRING);
+                          yylval.node_t = newTokenNode(STRING,lineCount);
                           return(STRING);
 }
 [a-zA-Z]([a-zA-Z0-9]|"_")*   { 
-                          yylval.node_t = newTokenNode(IDENTIFIER); 
+                          yylval.node_t = newTokenNode(IDENTIFIER,lineCount); 
                           yylval.node_t->string = (char*)malloc(yyleng+1); 
                           strcpy(yylval.node_t->string , yytext);
                           return(IDENTIFIER);
 }
 
 ":="              {
-            yylval.node_t = newTokenNode(ASSIGNMENT); 
+            yylval.node_t = newTokenNode(ASSIGNMENT,lineCount); 
             return(ASSIGNMENT);
 }
 ":"                  {
-        yylval.node_t = newTokenNode(COLON);  
+        yylval.node_t = newTokenNode(COLON,lineCount);  
         return(COLON);
 }
 ","               {
-        yylval.node_t = newTokenNode(COMMA);  
+        yylval.node_t = newTokenNode(COMMA,lineCount);  
         return(COMMA);
 }
 
 [0-9]+  |
 "-"[0-9]+                 {
-      yylval.node_t = newTokenNode(DIGSEQ);     
+      yylval.node_t = newTokenNode(DIGSEQ,lineCount);     
       yylval.node_t->valueValid = VALUE_I_VALID;
       yylval.node_t->iValue = atoi(yytext); 
       return(DIGSEQ);
 }
 
 "."                   {
-        yylval.node_t = newTokenNode(DOT); 
+        yylval.node_t = newTokenNode(DOT,lineCount); 
         return(DOT);
 }
 
 ".."             {
-        yylval.node_t = newTokenNode(DOTDOT);  
+        yylval.node_t = newTokenNode(DOTDOT,lineCount);  
         return(DOTDOT);
 }
 
 "="              {
-        yylval.node_t = newTokenNode(EQUAL);  
+        yylval.node_t = newTokenNode(EQUAL,lineCount);  
         yylval.node_t->op = OP_EQ;
         return(EQUAL);
 }
 
 "!="             {
-      yylval.node_t = newTokenNode(notEQUAL);
+      yylval.node_t = newTokenNode(notEQUAL,lineCount);
       yylval.node_t->op = OP_NE; 
       return(notEQUAL);
 }
 
 ">="             {
-      yylval.node_t = newTokenNode(GE);
+      yylval.node_t = newTokenNode(GE,lineCount);
       yylval.node_t->op = OP_GE; 
       return(GE);
 }
 
 ">"              {
-      yylval.node_t = newTokenNode(GT);
+      yylval.node_t = newTokenNode(GT,lineCount);
       yylval.node_t->op = OP_GT; 
       return(GT);
 }
 
 "["             {
-      yylval.node_t = newTokenNode(LBRAC);
+      yylval.node_t = newTokenNode(LBRAC,lineCount);
       return(LBRAC);
 }
 
 "<="           {
-      yylval.node_t = newTokenNode(LE); 
+      yylval.node_t = newTokenNode(LE,lineCount); 
       yylval.node_t->op = OP_LE;
       return(LE);
 }
 
 "("            {
-      yylval.node_t = newTokenNode(LPAREN); 
+      yylval.node_t = newTokenNode(LPAREN,lineCount); 
       return(LPAREN);
 }
 
 "<"            {
-      yylval.node_t = newTokenNode(LT);  
+      yylval.node_t = newTokenNode(LT,lineCount);  
       yylval.node_t->op = OP_LT;  
       return(LT);
 }
 
 "-"            {
-      yylval.node_t = newTokenNode(MINUS);
+      yylval.node_t = newTokenNode(MINUS,lineCount);
       yylval.node_t->op = OP_SUB; 
       return(MINUS);
 }
 
 "+"            {
-      yylval.node_t = newTokenNode(PLUS); 
+      yylval.node_t = newTokenNode(PLUS,lineCount); 
       yylval.node_t->op = OP_ADD;
       return(PLUS);
 }
 
 "]"            {
-      yylval.node_t = newTokenNode(RBRAC);
+      yylval.node_t = newTokenNode(RBRAC,lineCount);
       return(RBRAC);
 }
 
 [0-9]+"."[0-9]+  |
 "-"[0-9]+"."[0-9]+            {
-                  yylval.node_t = newTokenNode(REALNUMBER);
+                  yylval.node_t = newTokenNode(REALNUMBER,lineCount);
                   yylval.node_t->rValue = atof(yytext); 
+                  yylval.node_t->valueValid = VALUE_R_VALID;
                   return(REALNUMBER);
 }
 
 ")"                {
-          yylval.node_t = newTokenNode(RPAREN); 
+          yylval.node_t = newTokenNode(RPAREN,lineCount); 
           return(RPAREN);
 }
 
 ";"                {
-          yylval.node_t = newTokenNode(SEMICOLON); 
+          yylval.node_t = newTokenNode(SEMICOLON,lineCount); 
           return(SEMICOLON);
 }
 
 "/"                {
-          yylval.node_t = newTokenNode(SLASH);
+          yylval.node_t = newTokenNode(SLASH,lineCount);
           yylval.node_t->op = OP_DIV; 
           return(SLASH);
 }
 
 "*"                {
-          yylval.node_t = newTokenNode(STAR); 
+          yylval.node_t = newTokenNode(STAR,lineCount); 
           yylval.node_t->op = OP_MUL;
           return(STAR);
 }
@@ -287,8 +288,9 @@ NQUOTE [^']
 
 "-"[0-9]*"."[0-9]+"E"["+"|"-"][0-9]+ | 
 [0-9]*"."[0-9]+"E"["+"|"-"][0-9]+   {
-            yylval.node_t = newTokenNode(REALNUMBER); 
+            yylval.node_t = newTokenNode(REALNUMBER,lineCount); 
             yylval.node_t->rValue = atof(yytext);
+            yylval.node_t->valueValid = VALUE_R_VALID;
             return(REALNUMBER);
 }
 
@@ -320,13 +322,13 @@ NQUOTE [^']
 .    {fprintf(stderr,"Lexical analyzer error at line %d : %s\n",lineCount,yytext);}
 
 \"[^\t\f|^\r|^\n|^\"]*\"  {
-            yylval.node_t = newTokenNode(string_v) ; 
+            yylval.node_t = newTokenNode(string_v ,lineCount) ; 
             yylval.node_t->string = (char *)malloc(yyleng+1);
             strcpy(yylval.node_t->string , yytext);
             return(string_v);
 }
  \'[^t\f|^\r|^\n|^\"]*\' {
-            yylval.node_t = newTokenNode(string_v) ; 
+            yylval.node_t = newTokenNode(string_v,lineCount) ; 
             yylval.node_t->string = (char *)malloc(yyleng+1);
             strcpy(yylval.node_t->string , yytext);
             return(string_v);
@@ -338,10 +340,10 @@ NQUOTE [^']
 
 %%
 
-struct node* newTokenNode(int tokenType) {
-    struct node *node = newNode(NODE_TOKEN);
+struct node* newTokenNode(int tokenType , int lineCount) {
+    struct node *node = newNode(NODE_TOKEN, lineCount);
     node->tokenType = tokenType;
-
+    node->lineCount = lineCount;
     return node;
 }
 

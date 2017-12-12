@@ -4,7 +4,7 @@
 #include <string.h>
 
 struct SymTable SymbolTable;
-
+int check =1;
 //destroy useless symbol table entry 
 void popSymbolTable(){
     for(int i = 0 ; i < SymbolTable.size ; i++)
@@ -120,11 +120,10 @@ struct array_descriptor *  initArray(struct node * array_node ){
 struct SymTableEntry* findSymbol_in_scope(char *s) {
     for(int i = 0 ; i < SymbolTable.size ; i++){
         struct SymTableEntry * it = &SymbolTable.entries[i];
-        if(strcmp(s, it->name) == 0 && it->level == SymbolTable.current_level) 
-            {
-                printf("%d , %d\n" , it->level , SymbolTable.current_level);
+        if(strcmp(s, it->name) == 0 && it->level == SymbolTable.current_level){
+                //printf("%d , %d\n" , it->level , SymbolTable.current_level);
                 return it;
-            }
+        }
     }
     return 0;
 }
@@ -132,18 +131,15 @@ struct SymTableEntry* findSymbol_in_scope(char *s) {
 struct SymTableEntry* findSymbol_in_global(char *s) {
     for(int i = SymbolTable.size ; i >= 0 ; i--){
         struct SymTableEntry * it = &SymbolTable.entries[i];
-        if(strcmp(s, it->name) == 0 && it->level <= SymbolTable.current_level) 
+        if(strcmp(s, it->name) == 0 && it->level <= SymbolTable.current_level) {
+            //printf("%d , %d\n" , it->level , SymbolTable.current_level);
             return it;
+        }
     }
     return 0;
 }
 //////////////////// enter variable into a symbol table ///////////////
 struct SymTableEntry* addVariable(char *s, enum StdType type , struct array_descriptor * array_desc) {
-    if(findSymbol_in_scope(s) != 0) { 
-        printf("Error: duplicate declaration of variable %s\n", s);
-        return 0;
-        //exit(0);
-    }
 
     int index = SymbolTable.size;
     SymbolTable.size++;
@@ -181,6 +177,7 @@ struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_a
 struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure_attribute * procedure) {
     if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of procedure %s\n", s);
+        check =0;
         return 0;
         //exit(0);
     }
@@ -237,6 +234,28 @@ struct param_list * initParam(struct node * parameter ){
     }
     return param_root;
 }
+
+void printf_symbol_table(){
+    printf("Name    Type    scope\n");
+    for(int i = 0 ; i < SymbolTable.size ; i++){
+        printf("%s    ",SymbolTable.entries[i].name);
+        if(SymbolTable.entries[i].type == TypeArray)
+            printf("%s    " , "ARRAY");
+        else if(SymbolTable.entries[i].type == TypeInt)
+        printf("%s    " , "INT");
+        else if(SymbolTable.entries[i].type == TypeReal)
+        printf("%s    " , "REAL");
+        else if(SymbolTable.entries[i].type == TypeString)
+        printf("%s    " , "STRING");
+        else if(SymbolTable.entries[i].type == TypeFunction)
+        printf("%s    " , "FUNCTION");
+        else if(SymbolTable.entries[i].type == TypeProcedure)
+        printf("%s    " , "PROCEDURE");
+
+        printf("%d\n" , SymbolTable.entries[i].level);
+    }
+}
+
 void semanticCheck(struct node *node) {
     printf("current node type is %d\n" , node->nodeType);
     switch(node->nodeType) {
@@ -250,21 +269,26 @@ void semanticCheck(struct node *node) {
             
             /***********check function redeclaration*************/
             struct SymTableEntry * entry = findSymbol_in_global(function_name->string);
-            if(entry!=0 && entry->type == TypeFunction)
-                printf("Error: duplicate declaration of function %s\n" , function_name->string);
+            if(entry!=0 && entry->type == TypeFunction){
+                printf("[Error ] redeclared function %s at line %d\n" , function_name->string , node->lineCount);
+                check = 0;
+                return;
+            }
+            else {    
+                struct function_attribute * function_attribute_root = newFunctionAttr(StdtypeCheck(typeNode));
                 
-            struct function_attribute * function_attribute_root = newFunctionAttr(StdtypeCheck(typeNode));
-            
 
-            /***********check whether it has parameter**********/
-            if(parameter->nodeType != NODE_lambda)
-                function_attribute_root->param = initParam(parameter);
+                /***********check whether it has parameter**********/
+                if(parameter->nodeType != NODE_lambda)
+                    function_attribute_root->param = initParam(parameter);
 
-            /*******enter function entry into symbol table ************/
-            //entry functin_name , functiontype , function_attribtue 
-            addFunction(function_name->string , TypeFunction , function_attribute_root);
-            SymbolTable.current_level++;
-            printf("New scope created \n");                        
+                /*******enter function entry into symbol table ************/
+                //entry functin_name , functiontype , function_attribtue 
+                addFunction(function_name->string , TypeFunction , function_attribute_root);
+                SymbolTable.current_level++;
+                addVariable(function_name->string , StdtypeCheck(typeNode) , 0);
+                printf("New scope created \n");                        
+            }
             break;
         }
         /************Procedure declaration***********/
@@ -274,24 +298,27 @@ void semanticCheck(struct node *node) {
 
             /* check procedure of redeclared problem*/
             struct SymTableEntry * entry ;
-            if( (entry=findSymbol_in_global(procedure_name->string)) != 0 && entry->type == TypeProcedure)
-                printf("redeclared procedure %s\n" , procedure_name->string);
+            if( (entry=findSymbol_in_global(procedure_name->string)) != 0 && entry->type == TypeProcedure){
+                printf("[Error ] redeclared procedure %s at line %d\n" , procedure_name->string , node->lineCount);
+                check = 0;
+                return;
+            }
+            else {
+                struct procedure_attribute * procedure_attribute_root = newProcedureAttr();
 
-            struct procedure_attribute * procedure_attribute_root = newProcedureAttr();
-
-            //////////////  check whether it has parameter //////////////////////
-            if(parameter->nodeType != NODE_lambda)
-                procedure_attribute_root->param = initParam(parameter);
-            
-
-            addProcedure(procedure_name->string , TypeProcedure , procedure_attribute_root);
-            SymbolTable.current_level++;
-            printf("New scope created \n");            
+                //////////////  check whether it has parameter //////////////////////
+                if(parameter->nodeType != NODE_lambda)
+                    procedure_attribute_root->param = initParam(parameter);
+                
+                addProcedure(procedure_name->string , TypeProcedure , procedure_attribute_root);
+                SymbolTable.current_level++;
+                printf("New scope created \n");
+            }            
             break;
         }
         /************Close Scope********************/
         case NODE_END:{
-            popSymbolTable();
+            //popSymbolTable();
             SymbolTable.current_level--;
             printf("Scope deleted \n");                        
             return;
@@ -316,7 +343,15 @@ void semanticCheck(struct node *node) {
                             struct node *idList = nthChild(check_node, node);
                             struct node *idNode = idList->child;
                             do {
-                                addVariable(idNode->string, valueType , array_desc_root);
+                                struct SymTableEntry * temp =  findSymbol_in_scope(idNode->string);
+                                if(temp == 0){
+                                    addVariable(idNode->string, valueType , array_desc_root);
+                                }
+                                else {
+                                    printf("[Error ] Redclared Variable \"%s\" at line %d\n", idNode->string , idNode->lineCount);
+                                    check = 0;
+                                    return;
+                                }
                                 idNode = idNode->rsibling;
                             } while(idNode != idList->child);                          
                         }
@@ -325,7 +360,15 @@ void semanticCheck(struct node *node) {
                             struct node *idList = nthChild(check_node, node);
                             struct node *idNode = idList->child;
                             do {
-                                addVariable(idNode->string, valueType , 0);
+                                struct SymTableEntry * temp =  findSymbol_in_scope(idNode->string);
+                                if(temp == 0){
+                                    addVariable(idNode->string, valueType , 0);
+                                }
+                                else {
+                                    printf("[Error ] Redclared Variable \"%s\" at line %d\n", idNode->string , idNode->lineCount);
+                                    check = 0;
+                                    return;
+                                }                                
                                 idNode = idNode->rsibling;
                             } while(idNode != idList->child);
                         }
@@ -345,7 +388,9 @@ void semanticCheck(struct node *node) {
             struct SymTableEntry *entry = findSymbol_in_global(node->string);
             printf("identifier is %s\n" , node->string);
             if(entry == 0) {
-                printf("Error: undeclared variable %s and current_level is %d \n", node->string , SymbolTable.current_level);
+                printf("[Error ] undeclared variable %s and at line %d\n", node->string , node->lineCount);
+                check = 0;
+                return;
                 //exit(0);
             }
 
@@ -359,19 +404,22 @@ void semanticCheck(struct node *node) {
                     if(entry->procedure->param == NULL)
                         return;
                     else {
-                        printf("Error: wrong number of argument\n");
+                        printf("[Error ] wrong number of argument\n");
+                        check = 0;
                         return;
                     }
 
                 }
                 else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
-                    printf("Error: mismatch of procedure %s\n" , node->string);
+                    printf("[Error ] mismatch of procedure %s\n" , node->string);
+                    check = 0;
                     return;
                 }
                 else {
                     struct node * argument = node->child->child; // first argument
                     if(entry->procedure->param == NULL){
-                        printf("Error: wrong number of argument\n");
+                        printf("[Error ] wrong number of argument\n");
+                        check = 0;
                         return;
                     }
                     struct param_list * first_param = entry->procedure->param;
@@ -390,6 +438,7 @@ void semanticCheck(struct node *node) {
                         if(expr->valueType != TypeArray && checkParam->type != TypeArray){
                             if(expr->valueType != checkParam->type){
                                 printf("Error: wrong type of argument\n");
+                                check = 0;
                                 return;
                             }
                         }
@@ -400,10 +449,13 @@ void semanticCheck(struct node *node) {
                                 while(entry_array->next_array != entry_array){
                                     if(expr_array->array_begin != entry_array->array_begin || expr_array->array_end != entry_array->array_end){
                                         printf("Error: out range\n");
+                                        check = 0;
                                         return;
                                     }
                                     if(expr_array->type != entry_array->type){
                                         printf("Error: array type mismatch\n");
+                                        check = 0;
+                                        return;
                                     }
                                     expr_array = expr_array->next_array;
                                     entry_array = entry_array->next_array;
@@ -423,19 +475,21 @@ void semanticCheck(struct node *node) {
                     if(entry->function->param == NULL)
                         return;
                     else {
-                        printf("Error: wrong number of argument\n");
+                        printf("[Error ] wrong number of argument at line %d\n" , node->lineCount);
+                        check = 0;
                         return;
                     }
-
                 }
                 else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
-                    printf("Error: mismatch of procedure %s\n" , node->string);
+                    printf("[Error ] mismatch of procedure %s at line %d\n" , node->string , node->lineCount);
+                    check = 0;
                     return;
                 }
                 else {
                     struct node * argument = node->child->child; // first argument
                     if(entry->function->param == NULL){
-                        printf("Error: wrong number of argument\n");
+                        printf("[Error ] wrong number of argument at line %d\n" , node->lineCount);
+                        check = 0;
                         return;
                     }
                     struct param_list * first_param = entry->function->param;
@@ -453,7 +507,8 @@ void semanticCheck(struct node *node) {
                         }
                         if(expr->valueType != TypeArray && checkParam->type != TypeArray){
                             if(expr->valueType != checkParam->type){
-                                printf("Error: wrong type of argument\n");
+                                printf("[Error ] wrong type of argument at line %d\n" , node->lineCount);
+                                check = 0;
                                 return;
                             }
                         }
@@ -463,11 +518,14 @@ void semanticCheck(struct node *node) {
                                 struct array_descriptor * entry_array = checkParam->array;
                                 while(entry_array->next_array != entry_array){
                                     if(expr_array->array_begin != entry_array->array_begin || expr_array->array_end != entry_array->array_end){
-                                        printf("Error: out range\n");
+                                        printf("[Error ] out range at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return;
                                     }
                                     if(expr_array->type != entry_array->type){
-                                        printf("Error: array type mismatch\n");
+                                        printf("[Error ] array type mismatch at line %d\n" , node->lineCount);
+                                        check = 0;
+                                        return;
                                     }
                                     expr_array = expr_array->next_array;
                                     entry_array = entry_array->next_array;
@@ -536,8 +594,20 @@ void semanticCheck(struct node *node) {
             /*************** symbol table entry is variable *****************/ 
             else {
                 if(node->child!=NULL&&node->child->nodeType==TOKEN_LBRAC){
-                    printf("Error: wrong use of variabe %s \n" , node->string);
+                    printf("[Error ] wrong use of variabe %s at line %d\n" , node->string , node->lineCount);
+                    check = 0;
                     return;
+                }
+                else {
+                    if(entry->type == TypeInt){
+                        node->iValue = entry->iValue;
+                    }
+                    else if(entry->type == TypeReal){
+                        node->rValue = entry->rValue;
+                    }
+                    //else if(entry->type == TypeString){
+                        
+                    //}
                 }
             }
             return;
@@ -555,6 +625,7 @@ void semanticCheck(struct node *node) {
                                 case OP_ADD: {
                                         if(child1->valueType == TypeInt){
                                             node->iValue = child1->iValue + child2->iValue;
+                                            //node->entry->iValue = 
                                             return;
                                         }
                                         else if(child1->valueType == TypeReal){
@@ -562,7 +633,9 @@ void semanticCheck(struct node *node) {
                                             return;
                                         }
                                         else if(child1->valueType == TypeString){
-                                            printf("Error: wrong type \n");
+                                            printf("[Error ] wrong type  at line %d\n" , node->lineCount);
+                                            check = 0;
+                                            return;
                                         }
                                         else {//type array
     
@@ -612,11 +685,13 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return;
                                     }
                                     else {//type array
-                                        printf("Error: wrong type in arithmetic operation\n");
+                                        printf("[Error ]wrong type in arithmetic operation at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return; 
                                     }
                                 }
@@ -631,7 +706,8 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return;
                                     }
                                     else {//type array
@@ -649,7 +725,8 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ]wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return;
                                     }
                                     else {//type array
@@ -667,7 +744,8 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
                                         return;
                                     }
                                     else {//type array
@@ -685,7 +763,9 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
+                                        return;
                                     }
                                     else {//type array
     
@@ -702,7 +782,9 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
+                                        return;
                                     }
                                     else {//type array
     
@@ -719,7 +801,9 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                        check = 0;
+                                        return;
                                     }
                                     else {//type array
     
@@ -732,7 +816,9 @@ void semanticCheck(struct node *node) {
                             }
                         }
                         else {
-                            printf("type errors in arithmetic expression\n");
+                            printf("[Error] type errors in arithmetic expression\n");
+                            check = 0;
+                            return;
                         }
                     }
                     else {                        
@@ -750,6 +836,8 @@ void semanticCheck(struct node *node) {
                                     }
                                     else if(child1->valueType == TypeString){
                                         printf("Error: wrong type \n");
+                                        check =0;
+                                        return;
                                     }
                                     else {//type array
 
@@ -766,12 +854,17 @@ void semanticCheck(struct node *node) {
             struct node * statement1 = nthChild(2 , node);
             struct node * statement2 = nthChild(3 , node);
             semanticCheck(expr);
-            semanticCheck(statement1);
-            semanticCheck(statement2);
             if(expr->valueType != TypeInt){
-                printf("expression in If is not a right type\n");
-                exit(0);
+                printf("[Error ] expression in If is not a right type\n");
+                //exit(0);
+                check = 0;
+                return;
             }
+            if(expr->entry->iValue != 0)
+                semanticCheck(statement1);
+            else 
+                semanticCheck(statement2);
+
             return;
         }
         /*************** while statement check is implemented here *****************/
@@ -781,8 +874,10 @@ void semanticCheck(struct node *node) {
             semanticCheck(expr);
             semanticCheck(statement);
             if(expr->valueType != TypeInt){
-                printf("expression in while is not a right type\n");
-                exit(0);
+                printf("[Error ] expression in while is not a right type\n");
+                check = 0;
+                return;
+                //exit(0);
             }
             return;
         }
@@ -803,34 +898,49 @@ void semanticCheck(struct node *node) {
         } 
         case NODE_ASSIGN_STMT: {
             struct node *child1 = nthChild(1, node);
+            struct SymTableEntry * temp_check = findSymbol_in_global(child1->string);
+            if(temp_check->type == TypeFunction){
+                printf("[Error ] Function placed in LHS , maybe it should be placed in RHS at line %d\n" , node->lineCount);
+                //exit(0);
+                check = 0;
+                return;
+            }
             struct node *child2 = nthChild(2, node);
             semanticCheck(child1);
             semanticCheck(child2);
-
+            
             //////////procedure use in the assignment ///////////
             if(child1->valueType == TypeProcedure || child2->valueType == TypeProcedure){
-                printf("Miss use of procedure\n");
+                printf("[Error ] Miss use of procedure at line %d\n" , node->lineCount);
                 //exit(0);
-            }
-  
-            if(child1->valueType==TypeFunction )//&& child1->function->type == child2->valueType)
-            {
-                printf("Function placed in LHS , maybe it should be placed in RHS\n");
-                //exit(0);
+                check = 0;
                 return;
             }
-            switch
-
+  
             /* We only implement the checking for integer and real types
                you should implement the checking for array type by yourself */
             if(child1->valueType != child2->valueType) {
-                if(node->nodeType == NODE_OP)
-                    printf("Error: type mismatch for operator\n");
-                else
-                    printf("Error: type mismatch for assignment\n");
-                exit(0);
+                printf("[Error ] type mismatch for assignment at line %d\n" , child1->lineCount);
+                check = 0;
+                return ;
+                //exit(0);
             }
             node->valueType = child1->valueType;
+            /**********assign value into left element****************/
+            if(child1->valueType == TypeInt){
+                child1->entry->iValue = child2->iValue;
+                printf("Variable %s's value is %d \n", child1->entry->name , child1->entry->iValue);
+            }
+            else if(child1->valueType == TypeReal){
+                child1->entry->rValue = child2->rValue;
+            }
+            else if(child1->valueType == TypeString){
+                strcpy(child1->entry->string , child2->string);
+            }
+            //////////////// array assignment ////////
+            /*else {
+
+            }*/
             return;
         }
     }

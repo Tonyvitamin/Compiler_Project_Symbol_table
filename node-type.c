@@ -4,13 +4,14 @@
 #include "y.tab.h"
 #include "node-type.h"
 
-struct node* newNode(int type) {
+struct node* newNode(int type, int lineCount) {
     struct node *node = (struct node*)malloc(sizeof(struct node));
     node->nodeType = type;
     node->valueValid = VALUE_INVALID;
     node->string = NULL;
     node->parent = NULL;
     node->child = NULL;
+    node->lineCount = lineCount;
     node->lsibling = node;
     node->rsibling = node;
     return node;

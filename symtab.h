@@ -17,6 +17,8 @@ Every Symbol table's first entry is the name(function , procedure , ) for the sc
 #define global_domain 1
 #define while_domain 2
 
+//int  check = 1;
+
 enum StdType {TypeInt, TypeReal , TypeString , TypeArray , TypeFunction , TypeProcedure , TypeNULL};
 
 extern int current_level;
@@ -52,6 +54,9 @@ struct SymTableEntry {
     int iValue;
     char * string;
     double rValue;
+    int int_array[100][100][100][100][100];
+    double real_array[100][100][100][100][100];
+    //string type to be added
     int level;
     enum StdType type;
     struct procedure_attribute * procedure;
@@ -69,6 +74,6 @@ struct SymTable {
 extern struct SymTable SymbolTable;
 #include "node-type.h"
 void semanticCheck(struct node* node);
-
+void printf_symbol_table();
 #endif
 

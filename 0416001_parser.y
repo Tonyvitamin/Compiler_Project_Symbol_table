@@ -5,13 +5,15 @@
  #include "symtab.h"
     extern struct SymTable SymbolTable;
     struct node *  ASTRoot;
-    struct node * newOpNode(int op);
+    struct node * newOpNode(int op , int lineCount);
+    extern int lineCount;
+    extern int check;
     /* Called by yyparse on error.  */
      void
      yyerror (char const *s)
      {
         extern char *yytext;
-        extern int lineCount;
+        //extern int lineCount;
         fprintf (stderr, "%s: at line %d symbol'%s'\n", s,lineCount,yytext);
      }
 %}
@@ -50,7 +52,7 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
      subprogram_declarations
      compound_statement
      DOT {  //create symbol table
-            $$ = newNode(NODE_PROGRAM);
+            $$ = newNode(NODE_PROGRAM , lineCount);
             addChild($$ , $2);
             deleteNode($4);
             deleteNode($1); 
@@ -64,7 +66,7 @@ prog : PROGRAM IDENTIFIER LPAREN identifier_list RPAREN SEMICOLON
             ASTRoot = $$;};
 
 identifier_list : IDENTIFIER {
-                        $$ = newNode(NODE_LIST);
+                        $$ = newNode(NODE_LIST, lineCount);
                         addChild($$ , $1);};
         | identifier_list COMMA IDENTIFIER {  
                             $$ = $1;
@@ -79,14 +81,14 @@ declarations : declarations VAR identifier_list COLON type SEMICOLON {
                         deleteNode($4); 
                         deleteNode($6);}; 
                 | lambda {
-                        $$ = newNode(NODE_DECL); //handle declaration problem ex: array int real string_v
+                        $$ = newNode(NODE_DECL, lineCount); //handle declaration problem ex: array int real string_v
                     };
 
 type : standard_type {
             $$ = $1;
         };
         | ARRAY LBRAC DIGSEQ DOTDOT DIGSEQ RBRAC OF type {
-            $$ = newNode(NODE_TYPE_ARRAY);
+            $$ = newNode(NODE_TYPE_ARRAY, lineCount);
             addChild($$ , $3);
             addChild($$ , $5);
             addChild($$ , $8);
@@ -115,19 +117,19 @@ subprogram_declarations :
                                     deleteNode($3);
                                     };
 	| lambda {
-            $$ = newNode(NODE_SUB_DECLS);
+            $$ = newNode(NODE_SUB_DECLS, lineCount);
         };
 
 subprogram_declaration : subprogram_head
                              declarations
                             compound_statement {
-                $$ = newNode(NODE_LIST);
+                $$ = newNode(NODE_LIST, lineCount);
                 addChild($$ , $1);
                 addChild($$ , $2);
                 addChild($$ , $3);};
 
 subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON { //create symbol table
-                    $$ = newNode(NODE_FUN_HEAD);
+                    $$ = newNode(NODE_FUN_HEAD, lineCount);
                     deleteNode($1);
                     addChild($$ , $2);
                     addChild($$ , $3);
@@ -135,7 +137,7 @@ subprogram_head : FUNCTION IDENTIFIER arguments COLON standard_type SEMICOLON { 
                     deleteNode($4);
                     deleteNode($6);};
 	| PROCEDURE IDENTIFIER arguments SEMICOLON { //create symbol table
-                    $$ =  newNode(NODE_PRO_HEAD);
+                    $$ =  newNode(NODE_PRO_HEAD, lineCount);
                     deleteNode($1);
                     addChild($$ , $2);
                     addChild($$ , $3);
@@ -146,7 +148,7 @@ arguments : LPAREN parameter_list RPAREN {
                     deleteNode($1);
                     deleteNode($3);};
 	| lambda {
-            $$ = newNode(NODE_lambda);};
+            $$ = newNode(NODE_lambda, lineCount);};
 
 
 parameter_list : optional_var identifier_list COLON type {
@@ -163,18 +165,18 @@ parameter_list : optional_var identifier_list COLON type {
             deleteNode($5);};
 
 optional_var   : VAR {
-                        $$ = newNode(NODE_DECL);
+                        $$ = newNode(NODE_DECL, lineCount);
                         deleteNode($1);
                      };
-        | lambda {$$ = newNode(NODE_DECL);};
+        | lambda {$$ = newNode(NODE_DECL, lineCount);};
 
 
 compound_statement : begin
 		       optional_statements
 		       END {    // create symbol table
-                        $$ = newNode(NODE_BEGIN);
+                        $$ = newNode(NODE_BEGIN, lineCount);
                         addChild($$ , $2);
-                        struct node * temp = newNode(NODE_END);
+                        struct node * temp = newNode(NODE_END, lineCount);
                         addChild($$ , temp);
                         deleteNode($1);
                         deleteNode($3);
@@ -186,7 +188,7 @@ optional_statements : statement_list {
 
 
 statement_list : statement {
-                    $$ = newNode(NODE_LIST);
+                    $$ = newNode(NODE_LIST, lineCount);
                     addChild($$ , $1);};
 	| statement_list SEMICOLON statement {
                     $$ = $1;
@@ -194,7 +196,7 @@ statement_list : statement {
                     deleteNode($2);};
 
 statement : variable ASSIGNMENT expression {
-                $$ = newNode(NODE_ASSIGN_STMT);
+                $$ = newNode(NODE_ASSIGN_STMT, lineCount);
                 addChild($$ , $1);
                 addChild($$ , $3);
                 deleteNode($2);};
@@ -206,7 +208,7 @@ statement : variable ASSIGNMENT expression {
                          };
 	| IF expression THEN statement ELSE statement { 
                         //semantic if here
-                        $$ = newNode(NODE_IF);
+                        $$ = newNode(NODE_IF, lineCount);
                         addChild($$ , $2);
                         addChild($$ , $4);
                         addChild($$ , $6);
@@ -215,45 +217,45 @@ statement : variable ASSIGNMENT expression {
                         //deleteNode($5);
                         };
 	| WHILE expression DO statement { 
-            $$ = newNode(NODE_WHILE);
+            $$ = newNode(NODE_WHILE, lineCount);
             addChild($$ , $2);
             addChild($$ , $4);
             deleteNode($1);
             deleteNode($3);};
-	| lambda {$$ = newNode(NODE_LIST);};
+	| lambda {$$ = newNode(NODE_LIST, lineCount);};
 
 
 variable : IDENTIFIER tail {
-                $$ = newNode(NODE_SYM_REF);
+                $$ = newNode(NODE_SYM_REF, lineCount);
                 $$->string =  $1->string;
                 addChild($$ , $2);
                 };
 
 tail     : LBRAC expression RBRAC tail { 
                     $$ = $4;
-                    addChild($$ , newNode(TOKEN_LBRAC));
+                    addChild($$ , newNode(TOKEN_LBRAC, lineCount));
                     addChild($$ , $2);
-                    addChild($$ , newNode(TOKEN_RBRAC));
+                    addChild($$ , newNode(TOKEN_RBRAC, lineCount));
                     deleteNode($1);
                     deleteNode($3);
                     };
 
-	| lambda {$$ = newNode(NODE_LIST);};
+	| lambda {$$ = newNode(NODE_LIST, lineCount);};
 
 
 procedure_statement : IDENTIFIER {
-                            $$ = newNode(NODE_SYM_REF);//without parameter
+                            $$ = newNode(NODE_SYM_REF, lineCount);//without parameter
                             $$->string = $1->string;
                                  };
 	| IDENTIFIER LPAREN expression_list RPAREN {
-                $$ = newNode(NODE_SYM_REF);
+                $$ = newNode(NODE_SYM_REF, lineCount);
                 $$->string = $1->string;
                 addChild($$ , $3);
                 deleteNode($2);
                 deleteNode($4);};
 
 expression_list : expression {
-                    $$ = newNode(NODE_LIST);
+                    $$ = newNode(NODE_LIST, lineCount);
                     addChild($$ , $1);
                              };
 	| expression_list COMMA expression {
@@ -289,12 +291,12 @@ term : factor {
 
 
 factor : IDENTIFIER tail { //call declared variable , function , procedure 
-            $$ = newNode(NODE_SYM_REF);
+            $$ = newNode(NODE_SYM_REF, lineCount);
             $$->string = $1->string;
             addChild($$ , $2);
                          };
 	| IDENTIFIER LPAREN expression_list RPAREN {
-            $$ = newNode(NODE_SYM_REF);
+            $$ = newNode(NODE_SYM_REF, lineCount);
             $$->string = $1->string;
             addChild($$ , $3);
             deleteNode($2);
@@ -327,47 +329,47 @@ factor : IDENTIFIER tail { //call declared variable , function , procedure
             $$->nodeType = NODE_STRING_v;};
 
 addop : PLUS {
-                $$ = newOpNode(OP_ADD);
+                $$ = newOpNode(OP_ADD, lineCount);
                 deleteNode($1);};
         | MINUS {
-                $$ = newOpNode(OP_SUB);
+                $$ = newOpNode(OP_SUB, lineCount);
                 deleteNode($1);};
 
 
 mulop : STAR {
-                $$ = newOpNode(OP_MUL);
+                $$ = newOpNode(OP_MUL, lineCount);
                 deleteNode($1);};
         | SLASH {
-                $$ = newOpNode(OP_DIV);
+                $$ = newOpNode(OP_DIV, lineCount);
                 deleteNode($1);};
 
 relop : LT {
-            $$ = newOpNode(OP_LT);
+            $$ = newOpNode(OP_LT, lineCount);
             deleteNode($1);};
 	| GT {
-            $$ = newOpNode(OP_GT);
+            $$ = newOpNode(OP_GT, lineCount);
             deleteNode($1);};
 	| EQUAL {
-            $$ = newOpNode(OP_EQ);
+            $$ = newOpNode(OP_EQ, lineCount);
             deleteNode($1);};
 	| LE {
-            $$ = newOpNode(OP_LE);
+            $$ = newOpNode(OP_LE, lineCount);
             deleteNode($1);};
 	| GE {
-            $$ = newOpNode(OP_GE);
+            $$ = newOpNode(OP_GE, lineCount);
             deleteNode($1);};
 	| notEQUAL {
-            $$ = newOpNode(OP_NE);
+            $$ = newOpNode(OP_NE, lineCount);
             deleteNode($1);};
 
 lambda : ;
 
 %%
 
-struct node * newOpNode(int op) {
-            struct node * node = newNode(NODE_OP);
+struct node * newOpNode(int op , int lineCount) {
+            struct node * node = newNode(NODE_OP, lineCount);
             node->op = op;
-
+            node->lineCount = lineCount;
             return node;
     }
 
@@ -395,9 +397,12 @@ int main(int argc, char** argv) {
     SymbolTable.current_level = 0;
     printf("New scope created\n");
     semanticCheck(ASTRoot);
-    printf("********************************\n"
-           "*      No semantic error!      *\n"
-          "********************************\n");
+    printf_symbol_table();
+    if(check){
+        printf("********************************\n"
+               "*      No semantic error!      *\n"
+               "********************************\n");
+    }
     
     return 0;
 }

@@ -83,6 +83,8 @@ struct node {
     /* Attribute for NODE_TOKEN */
     int tokenType;
 
+    int lineCount;
+
 
     /* Values for general use */
     int iValue;
@@ -102,7 +104,7 @@ struct node {
 
 };
 
-struct node * newNode(int type);
+struct node * newNode(int type , int lineCount);
 void deleteNode(struct node * node);
 void addChild(struct node * node, struct node * child);
 void printTree(struct node * node, int ident);
