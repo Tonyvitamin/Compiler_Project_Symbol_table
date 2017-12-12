@@ -98,15 +98,14 @@ struct array_descriptor *  initArray(struct node * array_node ){
         array_desc_root->capacity = capacity;
 
         //create array descriptor link list
-        while(array_node->nodeType == TypeArray)
+        while(array_node->nodeType == NODE_TYPE_ARRAY)
         {
             array_node = array_node->child;
-            
             int start = array_node->iValue;
             array_node = array_node->rsibling;
             int end = array_node->iValue;
             array_node = array_node->rsibling;                
-            enum StdType arrayType = array_node->nodeType;
+            enum StdType arrayType = StdtypeCheck(array_node);
 
             struct array_descriptor * array_desc = newArrayDes(arrayType);
             array_desc->array_begin = start;
@@ -257,7 +256,7 @@ void printf_symbol_table(){
 }
 
 void semanticCheck(struct node *node) {
-    printf("current node type is %d\n" , node->nodeType);
+    //printf("current node type is %d\n" , node->nodeType);
     switch(node->nodeType) {
         /*implement scope increase*/
 
@@ -549,40 +548,76 @@ void semanticCheck(struct node *node) {
                     if(idx->child == NULL)
                         return;
                     else {
+                        ////////// count the dimenson in the symbol table and its standard type //////////
                         struct array_descriptor * array_argument = node->array;
                         int argumentNum = 1;
                         while(array_argument!=array_argument->next_array){
                             argumentNum++;
                             array_argument = array_argument->next_array;
                         }
+                        enum StdType type = array_argument->type;
+
+                        //////check for dimension//////////
+                        struct node * tmp = idx->child;
+                        int check_dimesion = 0;
+
+                        do{
+                            tmp = tmp->rsibling;//"num"
+                            tmp = tmp->rsibling;//"]"
+                            tmp = tmp->rsibling;//"[ or null"
+                            check_dimesion++;
+                        }while(tmp != idx->child);
+
+                        if(check_dimesion != argumentNum){
+                            printf("[Error ] wrong array dimesion\n");
+                            check = 0;
+                            return;
+                        }
+
                         idx = idx->child; //"["
+                        //printf("%d\n",idx->nodeType);
                         semanticCheck(idx->rsibling);
                         if(idx->rsibling->valueType != TypeInt){
-                            printf("Error: the argument is not integer\n");
+                            printf("[Error ] the argument is not integer\n");
+                            check = 0;
                             return;
                         }
                         int num =0;
                         idx = idx->rsibling; //"num"
+                        //printf("%d\n",idx->iValue);
                         while(idx != node->child->child){
                             array_argument = node->array;
                             for(int i = 1 ; i < argumentNum ; i++){
                                 array_argument = array_argument->next_array;
                             }
-                            if(idx->iValue > array_argument->array_begin || idx->iValue < array_argument->array_end){
-                                printf("Error: out of range\n");
+                            if(idx->iValue < array_argument->array_begin || idx->iValue > array_argument->array_end){
+                                printf("Error: idx is %d out of range from %d to %d\n" , idx->iValue , array_argument->array_begin , array_argument->array_end);
                                 return;
                             }
                             idx = idx->rsibling; //"]"
-                            if(idx->rsibling == node->child->child)// no more [ num ]
+                            if(idx->rsibling == node->child->child){// no more [ num ]
+                                //printf("no more [\n");
+                                if(argumentNum == 1){
+                                    //printf("happens\n");
+                                    node->valueType = type;
+                                    //printf("shit type is %d\n" , type);
+                                }
                                 break;
-
+                            }
                             if(argumentNum == 0){ // too many 
                                 printf("Error: wrong dimension \n");
                                 return;
                             }
                             num++;
                             argumentNum--;
+                            semanticCheck(idx->rsibling);
+                            if(idx->rsibling->valueType != TypeInt){
+                                printf("Error: the argument is not integer\n");
+                                return;
+                            }
                             idx = idx->rsibling; //"["
+                            idx = idx->rsibling;//"num"
+                            
                         }
                         node->array = array_argument;   
                     }
@@ -899,6 +934,13 @@ void semanticCheck(struct node *node) {
         case NODE_ASSIGN_STMT: {
             struct node *child1 = nthChild(1, node);
             struct SymTableEntry * temp_check = findSymbol_in_global(child1->string);
+
+            if(temp_check==0){
+                printf("[Error ] undeclared variable %s at line %d\n" , child1->string , child1->lineCount);
+                check = 0;
+                return;
+            }
+
             if(temp_check->type == TypeFunction){
                 printf("[Error ] Function placed in LHS , maybe it should be placed in RHS at line %d\n" , node->lineCount);
                 //exit(0);
@@ -928,6 +970,7 @@ void semanticCheck(struct node *node) {
             node->valueType = child1->valueType;
             /**********assign value into left element****************/
             if(child1->valueType == TypeInt){
+                printf("fuckleo here\n");
                 child1->entry->iValue = child2->iValue;
                 printf("Variable %s's value is %d \n", child1->entry->name , child1->entry->iValue);
             }
