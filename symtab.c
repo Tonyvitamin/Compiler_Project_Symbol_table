@@ -90,7 +90,7 @@ struct array_descriptor *  initArray(struct node * array_node ){
         array_node = array_node->rsibling;
         int end = array_node->iValue;
         array_node = array_node->rsibling;                
-        enum StdType arrayType = array_node->nodeType;
+        enum StdType arrayType = StdtypeCheck(array_node);//array_node->nodeType;
         int capacity = end - start;
         struct array_descriptor * array_desc_root = newArrayDes(arrayType);
         array_desc_root->array_begin = start;
@@ -174,12 +174,12 @@ struct SymTableEntry* addFunction(char *s, enum StdType type , struct function_a
 }
 //////////////////// enter procedure into a symbol table //////////////
 struct SymTableEntry* addProcedure(char *s, enum StdType type , struct procedure_attribute * procedure) {
-    if(findSymbol_in_global(s) != 0) { 
+    /*if(findSymbol_in_global(s) != 0) { 
         printf("Error: duplicate declaration of procedure %s\n", s);
         check =0;
         return 0;
         //exit(0);
-    }
+    }*/
 
     int index = SymbolTable.size;
     SymbolTable.size++;
@@ -233,7 +233,7 @@ struct param_list * initParam(struct node * parameter ){
     }
     return param_root;
 }
-
+///////////////// print out symbol table ///////////////
 void printf_symbol_table(){
     printf("Name    Type    scope\n");
     for(int i = 0 ; i < SymbolTable.size ; i++){
@@ -254,7 +254,6 @@ void printf_symbol_table(){
         printf("%d\n" , SymbolTable.entries[i].level);
     }
 }
-
 void semanticCheck(struct node *node) {
     //printf("current node type is %d\n" , node->nodeType);
     switch(node->nodeType) {
@@ -286,7 +285,7 @@ void semanticCheck(struct node *node) {
                 addFunction(function_name->string , TypeFunction , function_attribute_root);
                 SymbolTable.current_level++;
                 addVariable(function_name->string , StdtypeCheck(typeNode) , 0);
-                printf("New scope created \n");                        
+                printf("New scope created at line %d\n" , node->lineCount);                        
             }
             break;
         }
@@ -311,7 +310,7 @@ void semanticCheck(struct node *node) {
                 
                 addProcedure(procedure_name->string , TypeProcedure , procedure_attribute_root);
                 SymbolTable.current_level++;
-                printf("New scope created \n");
+                printf("New scope created at line %d\n" , node->lineCount);
             }            
             break;
         }
@@ -319,7 +318,7 @@ void semanticCheck(struct node *node) {
         case NODE_END:{
             //popSymbolTable();
             SymbolTable.current_level--;
-            printf("Scope deleted \n");                        
+            printf("Scope deleted at line %d\n" , node->lineCount);                        
             return;
         }
         /*************** Variable declaration ***********/
@@ -385,14 +384,14 @@ void semanticCheck(struct node *node) {
         /********function or procedure  arguments should also be checked here*********/ 
         case NODE_SYM_REF: { 
             struct SymTableEntry *entry = findSymbol_in_global(node->string);
-            printf("identifier is %s\n" , node->string);
+
             if(entry == 0) {
                 printf("[Error ] undeclared variable %s and at line %d\n", node->string , node->lineCount);
                 check = 0;
                 return;
                 //exit(0);
             }
-
+            printf("identifier is %s type is %d\n" , node->string , entry->type);
             node->entry = entry;
             node->valueType = entry->type;
             ////////////////// symbol table entry is procedure /////////////////////////////
@@ -479,11 +478,17 @@ void semanticCheck(struct node *node) {
                         return;
                     }
                 }
-                else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
-                    printf("[Error ] mismatch of procedure %s at line %d\n" , node->string , node->lineCount);
+                else if(node->child->child == NULL){
+                    //node->iValue = entry->iValue;
+                    //check =0;
+                    return;
+                }
+                else if(node->child->child->nodeType == TOKEN_LBRAC){
+                    printf("[Error ] mismatch of function %s at line %d\n" , node->string , node->lineCount);
                     check = 0;
                     return;
                 }
+
                 else {
                     struct node * argument = node->child->child; // first argument
                     if(entry->function->param == NULL){
@@ -540,7 +545,7 @@ void semanticCheck(struct node *node) {
             else if(entry->type == TypeArray) {
                 node->array = entry->array;
                 if(node->child == NULL){
-                    printf("warning: meanless use of array %s\n" , node->string);
+                    printf("warning: meanless use of array %s at line %d\n" , node->string , node->lineCount);
                     return;
                 }
                 else if(node->child->child == NULL || node->child->child->nodeType == TOKEN_LBRAC){
@@ -569,7 +574,7 @@ void semanticCheck(struct node *node) {
                         }while(tmp != idx->child);
 
                         if(check_dimesion != argumentNum){
-                            printf("[Error ] wrong array dimesion\n");
+                            printf("[Error ] wrong array dimesion at line %d\n" , node->lineCount);
                             check = 0;
                             return;
                         }
@@ -578,7 +583,7 @@ void semanticCheck(struct node *node) {
                         //printf("%d\n",idx->nodeType);
                         semanticCheck(idx->rsibling);
                         if(idx->rsibling->valueType != TypeInt){
-                            printf("[Error ] the argument is not integer\n");
+                            printf("[Error ] the argument is not integer at line %d\n" , node->lineCount);
                             check = 0;
                             return;
                         }
@@ -591,28 +596,29 @@ void semanticCheck(struct node *node) {
                                 array_argument = array_argument->next_array;
                             }
                             if(idx->iValue < array_argument->array_begin || idx->iValue > array_argument->array_end){
-                                printf("Error: idx is %d out of range from %d to %d\n" , idx->iValue , array_argument->array_begin , array_argument->array_end);
+                                printf("Error: idx is %d out of range from %d to %d at line %d\n" , idx->iValue , array_argument->array_begin , array_argument->array_end , node->lineCount);
                                 return;
                             }
                             idx = idx->rsibling; //"]"
                             if(idx->rsibling == node->child->child){// no more [ num ]
                                 //printf("no more [\n");
                                 if(argumentNum == 1){
-                                    //printf("happens\n");
+                                    //printf("happens %d\n" , type);
                                     node->valueType = type;
+                                    //return;
                                     //printf("shit type is %d\n" , type);
                                 }
                                 break;
                             }
                             if(argumentNum == 0){ // too many 
-                                printf("Error: wrong dimension \n");
+                                printf("Error: wrong dimension at line %d\n" , node->lineCount);
                                 return;
                             }
                             num++;
                             argumentNum--;
                             semanticCheck(idx->rsibling);
                             if(idx->rsibling->valueType != TypeInt){
-                                printf("Error: the argument is not integer\n");
+                                printf("Error: the argument is not integer at line %d\n" , node->lineCount);
                                 return;
                             }
                             idx = idx->rsibling; //"["
@@ -851,7 +857,7 @@ void semanticCheck(struct node *node) {
                             }
                         }
                         else {
-                            printf("[Error] type errors in arithmetic expression\n");
+                            printf("[Error] type errors in arithmetic expression at line %d\n" , node->lineCount);
                             check = 0;
                             return;
                         }
@@ -870,7 +876,7 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("Error: wrong type at line %d\n" , node->lineCount);
                                         check =0;
                                         return;
                                     }
@@ -890,7 +896,7 @@ void semanticCheck(struct node *node) {
             struct node * statement2 = nthChild(3 , node);
             semanticCheck(expr);
             if(expr->valueType != TypeInt){
-                printf("[Error ] expression in If is not a right type\n");
+                printf("[Error ] expression in If is not a right type at line %d\n" , node->lineCount);
                 //exit(0);
                 check = 0;
                 return;
@@ -909,7 +915,7 @@ void semanticCheck(struct node *node) {
             semanticCheck(expr);
             semanticCheck(statement);
             if(expr->valueType != TypeInt){
-                printf("[Error ] expression in while is not a right type\n");
+                printf("[Error ] expression in while is not a right type at line %d\n" , node->lineCount);
                 check = 0;
                 return;
                 //exit(0);

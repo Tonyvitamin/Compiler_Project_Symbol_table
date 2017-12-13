@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
 
     SymbolTable.size = 0;
     SymbolTable.current_level = 0;
-    printf("New scope created\n");
+    printf("New scope created at line 1\n");
     semanticCheck(ASTRoot);
     printf_symbol_table();
     if(check){
@@ -403,6 +403,8 @@ int main(int argc, char** argv) {
                "*      No semantic error!      *\n"
                "********************************\n");
     }
+    else 
+        printf("Semantic error\n");
     
     return 0;
 }
