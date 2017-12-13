@@ -259,6 +259,12 @@ void semanticCheck(struct node *node) {
     switch(node->nodeType) {
         /*implement scope increase*/
 
+        case NODE_BEGIN:{
+            if(node->rsibling != node){
+                SymbolTable.current_level++;
+            }
+            break;
+        }
         /************Function declaration*************/
         case NODE_FUN_HEAD: { 
             struct node * function_name = nthChild(1 , node);
@@ -391,7 +397,7 @@ void semanticCheck(struct node *node) {
                 return;
                 //exit(0);
             }
-            printf("identifier is %s type is %d\n" , node->string , entry->type);
+            //printf("identifier is %s type is %d\n" , node->string , entry->type);
             node->entry = entry;
             node->valueType = entry->type;
             ////////////////// symbol table entry is procedure /////////////////////////////
@@ -435,7 +441,7 @@ void semanticCheck(struct node *node) {
                         }
                         if(expr->valueType != TypeArray && checkParam->type != TypeArray){
                             if(expr->valueType != checkParam->type){
-                                printf("Error: wrong type of argument\n");
+                                printf("[Error ] wrong type of argument at line %d\n" , node->lineCount);
                                 check = 0;
                                 return;
                             }
@@ -446,12 +452,12 @@ void semanticCheck(struct node *node) {
                                 struct array_descriptor * entry_array = checkParam->array;
                                 while(entry_array->next_array != entry_array){
                                     if(expr_array->array_begin != entry_array->array_begin || expr_array->array_end != entry_array->array_end){
-                                        printf("Error: out range\n");
+                                        printf("[Error ] out range at line %d\n" , node->lineCount);
                                         check = 0;
                                         return;
                                     }
                                     if(expr_array->type != entry_array->type){
-                                        printf("Error: array type mismatch\n");
+                                        printf("[Error ] array type mismatch at line %d\n" , node->lineCount);
                                         check = 0;
                                         return;
                                     }
@@ -596,8 +602,8 @@ void semanticCheck(struct node *node) {
                                 array_argument = array_argument->next_array;
                             }
                             if(idx->iValue < array_argument->array_begin || idx->iValue > array_argument->array_end){
-                                printf("Error: idx is %d out of range from %d to %d at line %d\n" , idx->iValue , array_argument->array_begin , array_argument->array_end , node->lineCount);
-                                return;
+                                printf("[Error ] idx is %d out of range from %d to %d at line %d\n" , idx->iValue , array_argument->array_begin , array_argument->array_end , node->lineCount);
+                                //return;
                             }
                             idx = idx->rsibling; //"]"
                             if(idx->rsibling == node->child->child){// no more [ num ]
@@ -605,23 +611,23 @@ void semanticCheck(struct node *node) {
                                 if(argumentNum == 1){
                                     //printf("happens %d\n" , type);
                                     node->valueType = type;
-                                    //return;
+                                    return;
                                     //printf("shit type is %d\n" , type);
                                 }
                                 break;
                             }
                             if(argumentNum == 0){ // too many 
-                                printf("Error: wrong dimension at line %d\n" , node->lineCount);
+                                printf("[Error ] wrong dimension at line %d\n" , node->lineCount);
                                 return;
                             }
                             num++;
                             argumentNum--;
+                            idx = idx->rsibling; //"["                            
                             semanticCheck(idx->rsibling);
                             if(idx->rsibling->valueType != TypeInt){
-                                printf("Error: the argument is not integer at line %d\n" , node->lineCount);
+                                printf("[Error ] the argument is not integer at line %d\n" , node->lineCount);
                                 return;
                             }
-                            idx = idx->rsibling; //"["
                             idx = idx->rsibling;//"num"
                             
                         }
@@ -692,7 +698,7 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("Error: wrong type at line %d\n" , node->lineCount);
                                         return;
                                     }
                                     else {//type array
@@ -709,7 +715,7 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type \n");
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
                                         return;
                                     }
                                     else {//type array
@@ -876,7 +882,7 @@ void semanticCheck(struct node *node) {
                                         return;
                                     }
                                     else if(child1->valueType == TypeString){
-                                        printf("Error: wrong type at line %d\n" , node->lineCount);
+                                        printf("[Error ] wrong type at line %d\n" , node->lineCount);
                                         check =0;
                                         return;
                                     }
@@ -884,6 +890,24 @@ void semanticCheck(struct node *node) {
 
                                     }
                             }
+                        case OP_SUB: {
+                                if(child1->valueType == TypeInt){
+                                    node->iValue = child1->iValue;
+                                    return;
+                                }
+                                else if(child1->valueType == TypeReal){
+                                    node->rValue = child1->rValue; 
+                                    return;
+                                }
+                                else if(child1->valueType == TypeString){
+                                    printf("[Error ] wrong type at line %d\n" , node->lineCount);
+                                    check =0;
+                                    return;
+                                }
+                                else {//type array
+
+                                }
+                        }
                         }
                     }
                     return ;
@@ -905,7 +929,7 @@ void semanticCheck(struct node *node) {
                 semanticCheck(statement1);
             else 
                 semanticCheck(statement2);
-
+            SymbolTable.current_level++;
             return;
         }
         /*************** while statement check is implemented here *****************/
@@ -920,6 +944,7 @@ void semanticCheck(struct node *node) {
                 return;
                 //exit(0);
             }
+            SymbolTable.current_level++;
             return;
         }
         /*************** digseq factor check is implemented here*********/
@@ -976,9 +1001,9 @@ void semanticCheck(struct node *node) {
             node->valueType = child1->valueType;
             /**********assign value into left element****************/
             if(child1->valueType == TypeInt){
-                printf("fuckleo here\n");
+                //printf("fuckleo here\n");
                 child1->entry->iValue = child2->iValue;
-                printf("Variable %s's value is %d \n", child1->entry->name , child1->entry->iValue);
+                //printf("Variable %s's value is %d \n", child1->entry->name , child1->entry->iValue);
             }
             else if(child1->valueType == TypeReal){
                 child1->entry->rValue = child2->rValue;
