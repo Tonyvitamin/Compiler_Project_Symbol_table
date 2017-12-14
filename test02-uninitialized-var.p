@@ -2,7 +2,7 @@ PROGRAM foo(input, output, error) ;
    // variable declaraions
    var a, b, c: integer;
    var d, e: array [ 1 .. 10 ] of integer; 
-   //var g, h: real;
+   var g, h: real;
 
    // multi-dimensional array
    var g: array [ 23 .. 57 ] of array [ 23 .. 57 ] of array [ 23 .. 57 ] of array [ 23 .. 57 ] of array [ 23 .. 57 ] of real; 

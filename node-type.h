@@ -74,6 +74,7 @@ struct node;
   
 #include "symtab.h"
 struct node {
+    int final ;
     int nodeType;
     struct node *parent;
     struct node *child;

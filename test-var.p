@@ -1,10 +1,13 @@
 PROGRAM aa(input, output, error); 
 VAR a, b: INTEGER;
-VAR b: INTEGER;
 VAR c: REAL;
-
-BEGIN
-    a := 3 ;
-    b := 0;
-    a := a + b;
-END.
+  
+  PROCEDURE xxx;
+  BEGIN
+  END;
+  
+  BEGIN
+       a := 3;
+     b := a+4+d;  // Undeclared variable d
+     xxx;ooo;xxx  // Undeclared procedure ooo
+      END.

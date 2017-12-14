@@ -397,6 +397,7 @@ int main(int argc, char** argv) {
     SymbolTable.current_level = 0;
     printf("New scope created at line 1\n");
     semanticCheck(ASTRoot);
+    printf("Symbol table created\n");
     printf_symbol_table();
     if(check){
         printf("********************************\n"
