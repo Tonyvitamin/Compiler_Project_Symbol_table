@@ -15,7 +15,7 @@ PROGRAM foo(input, output, error) ;
    procedure sort(a: array [ 1 .. 10 ] of integer);
       var a, b, c: integer; // duplicated declaration
       begin
-        e := a + d        // WRONG 2: a is an int variable while d is an array.
+        e := a + d ;       // WRONG 2: a is an int variable while d is an array.
 	a := qqq - rrr;   // WRONG 3: qqq and rrr are undefined variables
         d := f(k, e);     // WRONG 4: f is undefined function
       end;
@@ -65,36 +65,36 @@ PROGRAM foo(input, output, error) ;
       k[25][26] := k[25][26] + 3;     // good
       k[25][126]  := 3.14;   // index out of bound
       k[125][26]  := 3.14;   // index out of bound
-      k[125][126] := 3.14    // index out of bound
+      k[125][126] := 3.14;    // index out of bound
       a := extf(20, sum);    // WARNING 7: can your compiler handle external functions?
 
 
 
       // Warning 8: Can you compiler handle #include
-   #include <abc.h>     // include
-      a = bbb(20, sum);
+   //#include <abc.h>     // include
+      //a = bbb(20, sum);
 
 
 
        // Warning 9: How do your compiler handle conditional compilation?
  
-      #if !defined(__unix__)
-      #include Long40.h¡¨
+      //#if !defined(__unix__)
+      //#include Long40.hï¿½ï¿½
        k[25][26] := k[25][26] + 5;     // good
-      #elif defined(_TMS320C6200)
-      #define assert(a)
+      //#elif defined(_TMS320C6200)
+      //#define assert(a)
        k[25][26] := k[25][26] + 333;     // good
-      #else
-      #include ¡¨Long40.h¡¨
+      //#else
+      //#include ï¿½ï¿½Long40.hï¿½ï¿½
        k[25][26] := k[25][26] + 6666;     // good
-      #include <assert.h>
-      #endif
+      //#include <assert.h>
+      //#endif
 
 
 
 
        // Warning 9: How do your compiler handle pragma?
-       #pragma    __promise((k % 16) == 0);
+       //#pragma    __promise((k % 16) == 0);
        b := 1;
        while b <= k do
        begin

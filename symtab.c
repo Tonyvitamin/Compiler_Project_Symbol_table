@@ -6,24 +6,6 @@
 struct SymTable SymbolTable;
 int check =1;
 int scope_check = 0;
-//destroy useless symbol table entry 
-void popSymbolTable(){
-    for(int i = 0 ; i < SymbolTable.size ; i++)
-    {
-        if(SymbolTable.entries[i].level == SymbolTable.current_level){
-            if(SymbolTable.entries[i].type!=TypeFunction && SymbolTable.entries[i].type!=TypeProcedure){
-                //strcpy(SymbolTable.entries[i].name , NULL);
-                printf("Destroy symbol table entry name is %s type is %d \n " , SymbolTable.entries[i].name , SymbolTable.entries[i].type);
-                bzero(SymbolTable.entries[i].name ,sizeof(SymbolTable.entries[i].name));
-                SymbolTable.entries[i].level = -1;
-                SymbolTable.entries[i].array = NULL;
-                SymbolTable.entries[i].function = NULL;
-                SymbolTable.entries[i].procedure = NULL;
-                SymbolTable.entries[i].type = TypeNULL;
-            }
-        }
-    }
-}
 // new parameter element
 struct param_list * newParam(char * s , enum StdType type){
     struct param_list * param_list = (struct param_list *)malloc(sizeof(struct param_list));
@@ -223,10 +205,7 @@ struct param_list * initParam(struct node * parameter ){
     
     typeList = typeList->rsibling;// type 
     struct param_list * param_root = newParam(idList->string , StdtypeCheck(typeList)); 
-    //printf("param type %s is %d\n", idList->string , param_root->type);               
-    
-    
-    //typeList = typeList->rsibling;
+
     if(param_root->type == TypeArray){
         struct array_descriptor * array_desc_root = initArray(typeList->child);
         param_root->array = array_desc_root;
@@ -298,18 +277,14 @@ void semanticCheck(struct node *node) {
     if(node->lsibling->nodeType == NODE_SUB_DECLS)
         scope_check=1;
     switch(node->nodeType) {
-        /*implement scope increase*/
-
+        /************* implement scope increase ************/
         case NODE_BEGIN:{
-            //if(node->rsibling->final == 1 )
-              //  break;
             if(node->rsibling->nodeType !=NODE_FUN_HEAD  && node->rsibling->nodeType != NODE_PRO_HEAD){
-                printf("begin at line %d\n" , node->lineCount);
                 SymbolTable.current_level++;
             }
             break;
         }
-        /************Function declaration*************/
+        /************ Function declaration *************/
         case NODE_FUN_HEAD: { 
             struct node * function_name = nthChild(1 , node);
             struct node * parameter = nthChild(2 , node);
@@ -317,23 +292,21 @@ void semanticCheck(struct node *node) {
             
             /***********check function redeclaration*************/
             struct SymTableEntry * entry = findSymbol_fun_pro_var(function_name->string);
-            if(entry!=0 ){//&& entry->type == TypeFunction){
+            if(entry!=0 ){
                 printf("[Error ] redeclared function %s at line %d\n" , function_name->string , node->lineCount);
                 check = 0;
-                //return;
                 SymbolTable.current_level++;                
                 return;
             }
             else {    
                 struct function_attribute * function_attribute_root = newFunctionAttr(StdtypeCheck(typeNode));
                 
-
-                /***********check whether it has parameter**********/
+                /*********** check whether it has parameter **********/
                 if(parameter->nodeType != NODE_lambda)
                     function_attribute_root->param = initParam(parameter);
 
-                /*******enter function entry into symbol table ************/
-                //entry functin_name , functiontype , function_attribtue 
+                /******* enter function entry into symbol table ************/
+                //////////////////// entry function_name , functiontype , function_attribtue ////////////////
                 addFunction(function_name->string , TypeFunction , function_attribute_root);
                 SymbolTable.current_level++;
                 addVariable(function_name->string , StdtypeCheck(typeNode) , 0);
@@ -341,7 +314,7 @@ void semanticCheck(struct node *node) {
             }
             break;
         }
-        /************Procedure declaration***********/
+        /************ Procedure declaration ***********/
         case NODE_PRO_HEAD: { 
             struct node * procedure_name = nthChild(1 , node);
             struct node * parameter = nthChild(2 , node);
@@ -361,25 +334,26 @@ void semanticCheck(struct node *node) {
                 if(parameter->nodeType != NODE_lambda)
                     procedure_attribute_root->param = initParam(parameter);
                 
+                /***************** enter  procedure   entry into symbol table ***************/
+
                 addProcedure(procedure_name->string , TypeProcedure , procedure_attribute_root);
                 SymbolTable.current_level++;
                 printf("New scope created at line %d\n" , node->lineCount);
             }            
             break;
         }
-        /************Close Scope********************/
+        /************ Close Scope ********************/
         case NODE_END:{
-            //popSymbolTable();
             SymbolTable.current_level--;
             printf("Scope deleted at line %d\n" , node->lineCount);                        
             return;
         }
         /*************** Variable declaration ***********/
         case NODE_DECL: {
-        ///////////// empty declaration /////////////          
+        ///////////// no declaration /////////////          
             if(node->child == NULL)
                     return;
-        ////////////declaration ////////////////    
+        ///////////// declaration ////////////////    
             else {
                 struct node * check_declaration = node->child;
                 int check_type = 2;
@@ -430,10 +404,7 @@ void semanticCheck(struct node *node) {
                 return ;
             }
         }
-        /* This case is simplified, actually you should check
-           the symbol is a variable or a function with no parameter */
-        //case NODE_VAR_OR_PROC: 
-        /********function or procedure  arguments should also be checked here*********/ 
+        /******** function or procedure  arguments should also be checked here *********/ 
         case NODE_SYM_REF: { 
             struct SymTableEntry *entry;
             if(scope_check==0)
@@ -750,7 +721,7 @@ void semanticCheck(struct node *node) {
             }
             return;
         }
-        /* Only implemented binary op here, you should implement unary op */
+        /*************** implemented binary op and unary op *******************/
         case NODE_OP:{
                     struct node * child1 = nthChild(1 , node);
                     struct node * child2 = nthChild(2 , node);
@@ -1003,26 +974,21 @@ void semanticCheck(struct node *node) {
                     }
                     return ;
         }
-
         /*************** If statement check is implemented here ********************/
         case NODE_IF:{
-            //printf("fuck \n");
             struct node * expr = nthChild(1 , node);
             struct node * statement1 = nthChild(2 , node);
             struct node * statement2 = nthChild(3 , node);
             semanticCheck(expr);            
             if(expr->valueType != TypeInt){
                 printf("[Error ] expression in If is not a right type at line %d\n" , node->lineCount);
-                //exit(0);
                 check = 0;
                 return;
             }
             if(expr->iValue != 0)
                 semanticCheck(statement1);
             else 
-                semanticCheck(statement2);
-                printf("fuck\n");
-                
+                semanticCheck(statement2);                
             SymbolTable.current_level++;
             return;
         }
@@ -1102,7 +1068,6 @@ void semanticCheck(struct node *node) {
             node->valueType = child1->valueType;
             /**********assign value into left element****************/
             if(child1->valueType == TypeInt){
-                //printf("fuckleo here\n");
                 child1->entry->iValue = child2->iValue;
                 //printf("Variable %s's value is %d \n", child1->entry->name , child1->entry->iValue);
             }
